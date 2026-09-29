@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HOP</title>
+<style>
+  :root{
+    --bg:#f7f5f1;
+    --panel:#ffffff;
+    --text:#1f2420;
+    --muted:#5b6560;
+    --line:#dedad2;
+    --accent:#2f3b33;
+    --blocked:#8a3324;
+    --blocked-bg:#f6e6e2;
+    --ok:#2f5d3a;
+    --ok-bg:#e6efe6;
+    --queued:#8a6d1f;
+    --queued-bg:#f6eede;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height:1.45;
+  }
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:40px 24px 24px;
+  }
+  header h1{
+    font-size:28px;
+    margin:0 0 6px;
+    letter-spacing:0.5px;
+  }
+  .subhead{
+    color:var(--muted);
+    margin:0 0 24px;
+    font-size:15px;
+    max-width:560px;
+  }
+  nav{
+    display:flex;
+    gap:8px;
+    margin-bottom:28px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:14px;
+  }
+  nav button{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:9px 18px;
+    border-radius:6px;
+    font-size:14px;
+    cursor:pointer;
+  }
+  nav button.active{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+  }
+  .screen{display:none;}
+  .screen.active{display:block;}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:24px;
+    margin-bottom:16px;
+  }
+  .field{
+    margin-bottom:18px;
+  }
+  .field label{
+    display:block;
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .field input, .field select{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:15px;
+    background:#fff;
+    color:var(--text);
+  }
+  .note{
+    font-size:13px;
+    color:var(--muted);
+    border-left:3px solid var(--line);
+    padding-left:12px;
+    margin-top:20px;
+  }
+  .row3{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:14px;
+    margin-bottom:20px;
+  }
+  .stat{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:14px;
+  }
+  .stat .k{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .stat .v{
+    font-size:18px;
+  }
+  .question{
+    font-size:16px;
+    margin:18px 0 8px;
+  }
+  .answer{
+    display:inline-block;
+    font-size:22px;
+    font-weight:700;
+    padding:4px 14px;
+    border-radius:6px;
+    margin-bottom:10px;
+  }
+  .answer.no{ color:var(--blocked); background:var(--blocked-bg); }
+  .answer.yes{ color:var(--ok); background:var(--ok-bg); }
+  .reason{
+    font-size:14px;
+    color:var(--muted);
+    margin-bottom:20px;
+  }
+  .buttons{
+    display:flex;
+    gap:10px;
+  }
+  .btn{
+    padding:10px 18px;
+    border-radius:6px;
+    font-size:14px;
+    border:1px solid var(--line);
+    cursor:pointer;
+  }
+  .btn-primary{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+  }
+  .btn-primary:disabled{
+    background:#c9c2b8;
+    border-color:#c9c2b8;
+    color:#6f6a60;
+    cursor:not-allowed;
+  }
+  .btn-secondary{
+    background:#fff;
+    color:var(--text);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  th, td{
+    text-align:left;
+    padding:10px 8px;
+    border-bottom:1px solid var(--line);
+  }
+  th{
+    color:var(--muted);
+    font-weight:600;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+  }
+  .result{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:4px;
+    font-size:13px;
+  }
+  .result.settled, .result.queued{ background:var(--queued-bg); color:var(--queued); }
+  .result.blocked, .result.refused{ background:var(--blocked-bg); color:var(--blocked); }
+  .result.nav{ background:var(--ok-bg); color:var(--ok); }
+  footer{
+    margin-top:28px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--muted);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>HOP</h1>
+    <p class="subhead">Move treasury cash between spendable dollars and earning dollars. Refuse the hop if it cannot settle.</p>
+  </header>
+
+  <nav>
+    <button id="nav-policy" class="active" onclick="showScreen('policy')">Policy</button>
+    <button id="nav-preview" onclick="showScreen('preview')">Preview</button>
+    <button id="nav-ledger" onclick="showScreen('ledger')">Ledger</button>
+  </nav>
+
+  <section id="screen-policy" class="screen active">
+    <div class="card">
+      <div class="field">
+        <label for="floor">Spendable floor</label>
+        <input type="number" id="floor" value="50000">
+      </div>
+      <div class="field">
+        <label for="sleeve">Yield sleeve</label>
+        <select id="sleeve">
+          <option>Demo T-bill sleeve</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="leadtime">Pull-back lead time (hours)</label>
+        <input type="number" id="leadtime" value="24">
+      </div>
+      <p class="note">Weekend rule: do not assume instant redeem. Demo only.</p>
+    </div>
+  </section>
+
+  <section id="screen-preview" class="screen">
+    <div class="card">
+      <div class="row3">
+        <div class="stat">
+          <div class="k">From USDC</div>
+          <div class="v">120,000</div>
+        </div>
+        <div class="stat">
+          <div class="k">Park to sleeve</div>
+          <div class="v">70,000</div>
+        </div>
+        <div class="stat">
+          <div class="k">Keep spendable</div>
+          <div class="v">50,000</div>
+        </div>
+      </div>
+
+      <p class="question">Can this become USDC tonight?</p>
+      <div id="answer" class="answer no">NO</div>
+      <p id="reason" class="reason">Blocked. Demo wallet is not allowlisted for the yield sleeve.</p>
+
+      <div class="buttons">
+        <button id="primary-btn" class="btn btn-primary" disabled>Blocked</button>
+        <button id="secondary-btn" class="btn btn-secondary" onclick="togglePreview()">Show allowlisted preview</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-ledger" class="screen">
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Action</th>
+            <th>Amount</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Mon 09:00</td>
+            <td>Park</td>
+            <td>70,000</td>
+            <td><span class="result queued">Queued</span></td>
+          </tr>
+          <tr>
+            <td>Mon 09:01</td>
+            <td>Park</td>
+            <td>70,000</td>
+            <td><span class="result blocked">Blocked — wallet not allowlisted</span></td>
+          </tr>
+          <tr>
+            <td>Fri 16:00</td>
+            <td>Recall</td>
+            <td>20,000</td>
+            <td><span class="result nav">Would settle next NAV window</span></td>
+          </tr>
+          <tr>
+            <td>Sat 11:00</td>
+            <td>Recall</td>
+            <td>20,000</td>
+            <td><span class="result refused">Refused — weekend</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Demo only. Does not move client funds. Not an offer of securities.</footer>
+
+</div>
+
+<script>
+  var previewAllowlisted = false;
+
+  function showScreen(name){
+    var screens = ['policy','preview','ledger'];
+    for (var i=0; i<screens.length; i++){
+      document.getElementById('screen-' + screens[i]).classList.remove('active');
+      document.getElementById('nav-' + screens[i]).classList.remove('active');
+    }
+    document.getElementById('screen-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+  }
+
+  function togglePreview(){
+    previewAllowlisted = !previewAllowlisted;
+    var answer = document.getElementById('answer');
+    var reason = document.getElementById('reason');
+    var primary = document.getElementById('primary-btn');
+    var secondary = document.getElementById('secondary-btn');
+
+    if (previewAllowlisted){
+      answer.textContent = 'YES';
+      answer.className = 'answer yes';
+      reason.textContent = 'Demo path only. A real hop still depends on cutoff, buffer, and transfer-agent rules.';
+      primary.disabled = false;
+      primary.textContent = 'Queue hop';
+      secondary.textContent = 'Show blocked preview';
+    } else {
+      answer.textContent = 'NO';
+      answer.className = 'answer no';
+      reason.textContent = 'Blocked. Demo wallet is not allowlisted for the yield sleeve.';
+      primary.disabled = true;
+      primary.textContent = 'Blocked';
+      secondary.textContent = 'Show allowlisted preview';
+    }
+  }
+</script>
+</body>
+</html>
