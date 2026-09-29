@@ -5,7 +5,7 @@ Hop parks idle on-chain cash into yielding tokenized assets and pulls it back fo
 Demo only. Does not move client funds. Not an offer of securities.
 
 ## Open the demo
-Download `hop-app.html` and open it in a browser.
+Download `HOP.html` and open it in a browser.
 
 ## Screens
 - Policy: spendable floor, yield sleeve, pull-back time
