@@ -211,6 +211,7 @@
     <button id="nav-policy" class="active" onclick="showScreen('policy')">Policy</button>
     <button id="nav-preview" onclick="showScreen('preview')">Preview</button>
     <button id="nav-ledger" onclick="showScreen('ledger')">Ledger</button>
+    <button id="nav-markets" onclick="showScreen('markets')">Markets</button>
   </nav>
 
   <section id="screen-policy" class="screen active">
@@ -302,6 +303,22 @@
     </div>
   </section>
 
+  <section id="screen-markets" class="screen">
+  <div class="card">
+    <p class="note">Saved BSC call, chain 56, code 0. Not a live request. No trades.</p>
+    <table>
+      <thead>
+        <tr><th>Symbol</th><th>Platform</th><th>Price</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>VICRon</td><td>ondo</td><td>312.47</td>
+          <td><span class="result nav">open, postmarket</span></td>
+        </tr>
+        <tr>
+          <td>FORMon</td><td>ondo</td><td>149.10</td>
+          <td><span class="result nav">open, postmarket</span></td>
+        </tr>
   <footer>Demo only. Does not move client funds. Not an offer of securities.</footer>
 
 </div>
@@ -310,7 +327,8 @@
   var previewAllowlisted = false;
 
   function showScreen(name){
-    var screens = ['policy','preview','ledger'];
+    
+var screens = ['policy','preview','ledger','markets'];
     for (var i=0; i<screens.length; i++){
       document.getElementById('screen-' + screens[i]).classList.remove('active');
       document.getElementById('nav-' + screens[i]).classList.remove('active');
