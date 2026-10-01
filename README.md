@@ -18,3 +18,6 @@ https://youtu.be/z63xF0Ccm50
 ## Competitions
 - Colosseum Crypto World's Fair
 - BNB Hack: Tokenized Stocks Edition
+
+## First Calls
+First live calls: GET /rwa/platforms, then GET /rwa/tokens?binanceChainId=56
