@@ -1,0 +1,40 @@
+name: Update market feed
+
+# Every 15 minutes, call the Binance Web3 RWA endpoint (read-only) and publish
+# the result to the "feed" branch as markets.json. The branch is rewritten each
+# time, so main's history stays clean. Run it by hand from the Actions tab with
+# "Run workflow" to test.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hop-feed
+  cancel-in-progress: true
+
+jobs:
+  feed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch RWA tokens (chain 56)
+        env:
+          BINANCE_WEB3_API_KEY: ${{ secrets.BINANCE_WEB3_API_KEY }}
+          BINANCE_WEB3_API_SECRET: ${{ secrets.BINANCE_WEB3_API_SECRET }}
+        run: python3 scripts/fetch_feed.py out/markets.json
+
+      - name: Publish to the feed branch
+        run: |
+          cd out
+          git init -q -b feed
+          git config user.name "hop-feed"
+          git config user.email "hop-feed@users.noreply.github.com"
+          git add markets.json
+          git commit -q -m "feed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" feed
