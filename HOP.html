@@ -18,6 +18,9 @@
     --ok-bg:#e6efe6;
     --queued:#8a6d1f;
     --queued-bg:#f6eede;
+    --band-reg:#2f3b33;
+    --band-ext:#cfd6cd;
+    --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   }
   *{box-sizing:border-box;}
   body{
@@ -28,168 +31,289 @@
     line-height:1.45;
   }
   .wrap{
-    max-width:760px;
+    max-width:980px;
     margin:0 auto;
-    padding:40px 24px 24px;
+    padding:36px 24px 24px;
   }
-  header h1{
-    font-size:28px;
-    margin:0 0 6px;
-    letter-spacing:0.5px;
+
+  /* masthead */
+  .mast{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    flex-wrap:wrap;
+    padding-bottom:18px;
+    border-bottom:2px solid var(--text);
+  }
+  .mast h1{
+    font-size:30px;
+    margin:0 0 4px;
+    letter-spacing:3px;
   }
   .subhead{
     color:var(--muted);
-    margin:0 0 24px;
-    font-size:15px;
-    max-width:560px;
+    margin:0;
+    font-size:14px;
+    max-width:520px;
   }
+  .clock{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+    text-align:right;
+    line-height:1.6;
+  }
+  .clock b{ color:var(--text); font-weight:600; }
+
+  /* tabs */
   nav{
     display:flex;
-    gap:8px;
-    margin-bottom:28px;
+    gap:22px;
     border-bottom:1px solid var(--line);
-    padding-bottom:14px;
+    margin-bottom:28px;
     flex-wrap:wrap;
   }
   nav button{
-    background:var(--panel);
-    border:1px solid var(--line);
-    color:var(--text);
-    padding:9px 18px;
-    border-radius:6px;
-    font-size:14px;
+    background:none;
+    border:0;
+    border-bottom:3px solid transparent;
+    color:var(--muted);
+    padding:12px 0 10px;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:1.2px;
+    text-transform:uppercase;
     cursor:pointer;
+    margin-bottom:-1px;
   }
   nav button.active{
-    background:var(--accent);
-    color:#fff;
-    border-color:var(--accent);
+    color:var(--text);
+    border-bottom-color:var(--accent);
   }
   .screen{display:none;}
   .screen.active{display:block;}
-  .card{
+
+  .label{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin:0 0 10px;
+  }
+  .panel{
     background:var(--panel);
     border:1px solid var(--line);
-    border-radius:8px;
-    padding:24px;
-    margin-bottom:16px;
-  }
-  .field{
-    margin-bottom:18px;
-  }
-  .field label{
-    display:block;
-    font-size:13px;
-    color:var(--muted);
-    margin-bottom:6px;
-  }
-  .field input, .field select{
-    width:100%;
-    padding:10px 12px;
-    border:1px solid var(--line);
-    border-radius:6px;
-    font-size:15px;
-    background:#fff;
-    color:var(--text);
+    padding:20px 22px;
+    margin-bottom:20px;
   }
   .note{
     font-size:13px;
     color:var(--muted);
     border-left:3px solid var(--line);
     padding-left:12px;
-    margin-top:20px;
+    margin:0 0 16px;
   }
-  .row3{
-    display:grid;
-    grid-template-columns:1fr 1fr 1fr;
-    gap:14px;
-    margin-bottom:20px;
-  }
-  .stat{
-    background:var(--bg);
+
+  /* inputs */
+  input, select{
+    font-family:var(--mono);
+    font-size:14px;
+    color:var(--text);
+    background:var(--panel);
     border:1px solid var(--line);
-    border-radius:6px;
-    padding:14px;
+    padding:7px 9px;
+    border-radius:2px;
   }
-  .stat .k{
+  input:focus, select:focus{ outline:2px solid var(--accent); outline-offset:0; }
+  button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .inl{
+    width:96px;
+    border:0;
+    border-bottom:2px solid var(--text);
+    border-radius:0;
+    background:#f1efe9;
+    text-align:right;
+    font-weight:600;
+  }
+  select.inl{ width:auto; text-align:left; padding-right:4px; }
+
+  /* policy: rule sheet */
+  .rules{ list-style:none; margin:0; padding:0; counter-reset:r; }
+  .rules li{
+    display:grid;
+    grid-template-columns:36px 1fr;
+    align-items:baseline;
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+    font-size:16px;
+  }
+  .rules li:last-child{ border-bottom:0; }
+  .rules li::before{
+    counter-increment:r;
+    content:counter(r);
+    font-family:var(--mono);
     font-size:12px;
     color:var(--muted);
-    margin-bottom:4px;
   }
-  .stat .v{
-    font-size:18px;
-  }
-  .question{
-    font-size:16px;
-    margin:18px 0 8px;
-  }
-  .answer{
-    display:inline-block;
-    font-size:22px;
-    font-weight:700;
-    padding:4px 14px;
-    border-radius:6px;
-    margin-bottom:10px;
-  }
-  .answer.no{ color:var(--blocked); background:var(--blocked-bg); }
-  .answer.yes{ color:var(--ok); background:var(--ok-bg); }
-  .reason{
+  .rules li p{ margin:0; }
+  .rules li.fixed{ color:var(--muted); font-size:15px; }
+  .rules li.fixed b{ color:var(--text); font-family:var(--mono); font-weight:600; }
+  .pos{
+    display:flex;
+    gap:32px;
+    flex-wrap:wrap;
+    align-items:center;
     font-size:14px;
+  }
+  .pos label{ display:flex; gap:10px; align-items:center; }
+
+  /* preview */
+  .cols{
+    display:grid;
+    grid-template-columns:270px 1fr;
+    gap:28px;
+    align-items:start;
+  }
+  @media (max-width:820px){ .cols{ grid-template-columns:1fr; } }
+  .f{ margin-bottom:14px; }
+  .f label{
+    display:block;
+    font-size:11px;
+    letter-spacing:1px;
+    text-transform:uppercase;
     color:var(--muted);
+    margin-bottom:5px;
+  }
+  .f input, .f select{ width:100%; }
+  #v-scn{ font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size:13px; }
+  .cols > div{ min-width:0; }
+  .f .two{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .tag{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:11px;
+    padding:1px 6px;
+    margin-top:6px;
+    border:1px solid var(--line);
+    color:var(--muted);
+  }
+  .tag.real{ color:var(--ok); border-color:var(--ok); }
+  .tag.sim{ color:var(--queued); border-color:var(--queued); }
+
+  .verdict{
+    border:1px solid var(--line);
+    border-left-width:8px;
+    background:var(--panel);
+    padding:16px 20px;
     margin-bottom:20px;
   }
-  .buttons{
+  .verdict .top{
     display:flex;
+    gap:28px;
+    align-items:baseline;
+    flex-wrap:wrap;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.5px;
+  }
+  .verdict .word{
+    font-family:var(--mono);
+    font-size:30px;
+    font-weight:700;
+    letter-spacing:2px;
+    line-height:1.2;
+  }
+  .verdict .why{ margin:6px 0 0; font-size:15px; }
+  .verdict .after{ margin:4px 0 0; font-size:13px; color:var(--muted); font-family:var(--mono); }
+  .v-allow{ border-left-color:var(--ok); }
+  .v-allow .word{ color:var(--ok); }
+  .v-queue{ border-left-color:var(--queued); }
+  .v-queue .word{ color:var(--queued); }
+  .v-blocked, .v-refuse{ border-left-color:var(--blocked); }
+  .v-blocked .word, .v-refuse .word{ color:var(--blocked); }
+
+  .ruler{ overflow-x:auto; border:1px solid var(--line); background:var(--panel); margin-bottom:20px; }
+  .ruler svg{ display:block; min-width:680px; width:100%; height:auto; }
+  .ruler text{ font-family:var(--mono); font-size:15px; fill:var(--text); }
+  .ruler .dim{ fill:var(--muted); }
+  .legend{
+    display:flex; gap:18px; flex-wrap:wrap;
+    padding:8px 14px 10px;
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+    border-top:1px solid var(--line);
+  }
+  .legend i{ display:inline-block; width:14px; height:9px; margin-right:6px; vertical-align:middle; }
+
+  .checks{ border:1px solid var(--line); background:var(--panel); margin-bottom:16px; }
+  .chk{
+    display:grid;
+    grid-template-columns:30px 190px 1fr 56px;
     gap:10px;
-  }
-  .btn{
-    padding:10px 18px;
-    border-radius:6px;
+    padding:10px 14px;
+    border-bottom:1px solid var(--line);
     font-size:14px;
-    border:1px solid var(--line);
-    cursor:pointer;
+    align-items:baseline;
   }
-  .btn-primary{
+  .chk:last-child{ border-bottom:0; }
+  .chk .n{ font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .chk .det{ font-family:var(--mono); font-size:12.5px; color:var(--muted); overflow-wrap:anywhere; }
+  .chk .res{ font-family:var(--mono); font-size:12px; font-weight:700; text-align:right; letter-spacing:.5px; }
+  .chk.pass .res{ color:var(--ok); }
+  .chk.fail .res{ color:var(--blocked); }
+  .chk.fail{ background:#fbf3f1; }
+  .chk.wait .res{ color:var(--queued); }
+  .chk.na .res{ color:var(--muted); }
+  @media (max-width:640px){
+    .chk{ grid-template-columns:24px 1fr 52px; }
+    .chk .res{ grid-column:3; grid-row:1; }
+    .chk .det{ grid-column:2 / 4; }
+  }
+
+  .btn{
+    font-family:var(--mono);
+    font-size:13px;
+    letter-spacing:.5px;
+    padding:10px 16px;
+    border:1px solid var(--accent);
     background:var(--accent);
     color:#fff;
-    border-color:var(--accent);
+    cursor:pointer;
+    border-radius:2px;
   }
-  .btn-primary:disabled{
-    background:#c9c2b8;
-    border-color:#c9c2b8;
-    color:#6f6a60;
-    cursor:not-allowed;
-  }
-  .btn-secondary{
-    background:#fff;
-    color:var(--text);
-  }
-  table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:14px;
-  }
-  th, td{
-    text-align:left;
-    padding:10px 8px;
-    border-bottom:1px solid var(--line);
-  }
+
+  /* tables */
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th, td{ text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:baseline; }
   th{
     color:var(--muted);
     font-weight:600;
-    font-size:12px;
+    font-size:11px;
     text-transform:uppercase;
-    letter-spacing:0.4px;
+    letter-spacing:1.2px;
   }
+  td.num, td.mono{ font-family:var(--mono); font-size:13px; }
   .result{
     display:inline-block;
     padding:2px 8px;
-    border-radius:4px;
+    border-radius:3px;
     font-size:13px;
   }
   .result.settled, .result.queued{ background:var(--queued-bg); color:var(--queued); }
   .result.blocked, .result.refused{ background:var(--blocked-bg); color:var(--blocked); }
   .result.nav{ background:var(--ok-bg); color:var(--ok); }
+  .why-s{ display:block; font-size:12px; color:var(--muted); margin-top:3px; }
+  .seg{ display:flex; gap:0; margin-bottom:14px; }
+  .seg button{
+    font-family:var(--mono); font-size:12px;
+    padding:7px 12px; border:1px solid var(--line); background:var(--panel);
+    color:var(--muted); cursor:pointer; margin-right:-1px;
+  }
+  .seg button.active{ background:var(--accent); color:#fff; border-color:var(--accent); position:relative; }
+  .fresh td{ background:#f3f6f1; }
+
   footer{
     margin-top:28px;
     padding-top:16px;
@@ -203,9 +327,12 @@
 <body>
 <div class="wrap">
 
-  <header>
-    <h1>HOP</h1>
-    <p class="subhead">Move treasury cash between spendable dollars and earning dollars. Refuse the hop if it cannot settle.</p>
+  <header class="mast">
+    <div>
+      <h1>HOP</h1>
+      <p class="subhead">Move treasury cash between spendable dollars and earning dollars. Refuse the hop if it cannot settle.</p>
+    </div>
+    <div class="clock" id="clock"></div>
   </header>
 
   <nav>
@@ -215,56 +342,76 @@
     <button id="nav-markets" onclick="showScreen('markets')">Markets</button>
   </nav>
 
+  <!-- POLICY -->
   <section id="screen-policy" class="screen active">
-    <div class="card">
-      <div class="field">
-        <label for="floor">Spendable floor</label>
-        <input type="number" id="floor" value="50000">
-      </div>
-      <div class="field">
-        <label for="sleeve">Yield sleeve</label>
-        <select id="sleeve">
-          <option>Demo T-bill sleeve</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="leadtime">Pull-back lead time (hours)</label>
-        <input type="number" id="leadtime" value="24">
-      </div>
-      <p class="note">Weekend rule: do not assume instant redeem. Demo only.</p>
+    <p class="label">Rule sheet</p>
+    <div class="panel">
+      <ol class="rules">
+        <li><p>Keep at least <input id="p-floor" class="inl" type="number" value="50000" min="0" step="1000"> USDC spendable at all times.</p></li>
+        <li><p>Park idle cash in <select id="p-sleeve" class="inl"><option>Demo T-bill sleeve</option></select></p></li>
+        <li><p>Have cash back <input id="p-lead" class="inl" type="number" value="24" min="0" step="1" style="width:64px"> hours before any payment is due.</p></li>
+        <li><p>If that deadline falls on a weekend, <select id="p-weekend" class="inl"><option value="friday">use the last Friday close</option><option value="refuse">refuse the hop</option></select></p></li>
+        <li class="fixed"><p>Allow only when the feed reports <b>regular</b>. Any other reading queues for the next open or refuses. This rule is fixed.</p></li>
+      </ol>
     </div>
+
+    <p class="label">Demo position</p>
+    <div class="panel">
+      <div class="pos">
+        <label>Spendable USDC <input id="p-spend" class="inl" type="number" value="120000" min="0" step="1000"></label>
+        <label>In sleeve <input id="p-insleeve" class="inl" type="number" value="40000" min="0" step="1000"></label>
+      </div>
+    </div>
+
+    <p class="note">Model: redemption windows are the regular US session, Monday to Friday, 09:30 to 16:00 New York. Market holidays and issuer cut-offs are not modeled. Demo only.</p>
   </section>
 
+  <!-- PREVIEW -->
   <section id="screen-preview" class="screen">
-    <div class="card">
-      <div class="row3">
-        <div class="stat">
-          <div class="k">From USDC</div>
-          <div class="v">120,000</div>
-        </div>
-        <div class="stat">
-          <div class="k">Park to sleeve</div>
-          <div class="v">70,000</div>
-        </div>
-        <div class="stat">
-          <div class="k">Keep spendable</div>
-          <div class="v">50,000</div>
+    <div class="cols">
+
+      <div>
+        <p class="label">Proposed hop</p>
+        <div class="panel">
+          <div class="f">
+            <label for="v-action">Action</label>
+            <select id="v-action"><option value="park">Park to sleeve</option><option value="recall">Recall to USDC</option></select>
+          </div>
+          <div class="f">
+            <label for="v-amount">Amount (USDC)</label>
+            <input id="v-amount" type="number" value="70000" min="0" step="1000">
+          </div>
+          <div class="f">
+            <label for="v-due">Payment due (New York time)</label>
+            <input id="v-due" type="datetime-local">
+          </div>
+          <div class="f">
+            <label for="v-allow">Wallet on sleeve allowlist</label>
+            <select id="v-allow"><option value="no">No</option><option value="yes">Yes</option></select>
+          </div>
+          <div class="f">
+            <label for="v-scn">Feed reading</label>
+            <select id="v-scn"></select>
+            <span class="tag" id="scn-tag"></span>
+          </div>
         </div>
       </div>
 
-      <p class="question">Can this become USDC tonight?</p>
-      <div id="answer" class="answer no">NO</div>
-      <p id="reason" class="reason">Blocked. Demo wallet is not allowlisted for the yield sleeve.</p>
-
-      <div class="buttons">
-        <button id="primary-btn" class="btn btn-primary" disabled>Blocked</button>
-        <button id="secondary-btn" class="btn btn-secondary" onclick="togglePreview()">Show allowlisted preview</button>
+      <div>
+        <div id="verdict" class="verdict" aria-live="polite"></div>
+        <p class="label">Settlement window, New York time</p>
+        <div class="ruler" id="ruler"></div>
+        <p class="label">Checks</p>
+        <div class="checks" id="checks"></div>
+        <button class="btn" onclick="recordDecision()">Record decision in ledger</button>
       </div>
+
     </div>
   </section>
 
+  <!-- LEDGER -->
   <section id="screen-ledger" class="screen">
-    <div class="card">
+    <div class="panel">
       <table>
         <thead>
           <tr>
@@ -274,29 +421,29 @@
             <th>Result</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="ledger-body">
           <tr>
-            <td>Mon 09:00</td>
+            <td class="mono">Mon 09:00</td>
             <td>Park</td>
-            <td>70,000</td>
+            <td class="num">70,000</td>
             <td><span class="result queued">Queued</span></td>
           </tr>
           <tr>
-            <td>Mon 09:01</td>
+            <td class="mono">Mon 09:01</td>
             <td>Park</td>
-            <td>70,000</td>
+            <td class="num">70,000</td>
             <td><span class="result blocked">Blocked — wallet not allowlisted</span></td>
           </tr>
           <tr>
-            <td>Fri 16:00</td>
+            <td class="mono">Fri 16:00</td>
             <td>Recall</td>
-            <td>20,000</td>
+            <td class="num">20,000</td>
             <td><span class="result nav">Would settle next NAV window</span></td>
           </tr>
           <tr>
-            <td>Sat 11:00</td>
+            <td class="mono">Sat 11:00</td>
             <td>Recall</td>
-            <td>20,000</td>
+            <td class="num">20,000</td>
             <td><span class="result refused">Refused — weekend</span></td>
           </tr>
         </tbody>
@@ -304,31 +451,16 @@
     </div>
   </section>
 
+  <!-- MARKETS -->
   <section id="screen-markets" class="screen">
-    <div class="card">
-      <p class="note">Saved BSC call, 7 October, chain 56, code 0. Premarket. Not a live request. No trades.</p>
+    <div class="panel">
+      <div class="seg" id="snap-seg"></div>
+      <p class="note" id="snap-note"></p>
       <table>
         <thead>
-          
-<tr><th>Symbol</th><th>Platform</th><th>Price</th><th>Status</th><th>Decision</th></tr>
+          <tr><th>Symbol</th><th>Platform</th><th>Price</th><th>Status</th><th>Decision</th></tr>
         </thead>
-        <tbody>
-          <tr>
-  <td>FCELon</td><td>ondo</td><td>19.98</td>
-  <td><span class="result nav">open, premarket</span></td>
-  <td><span class="result refused">Refuse</span></td>
-</tr>
-<tr>
-  <td>CIENon</td><td>ondo</td><td>429.2</td>
-  <td><span class="result nav">open, premarket</span></td>
-  <td><span class="result refused">Refuse</span></td>
-</tr>
-<tr>
-  <td>SOXSon</td><td>ondo</td><td>—</td>
-  <td><span class="result nav">open, premarket</span></td>
-  <td><span class="result refused">Refuse</span></td>
-</tr>
-        </tbody>
+        <tbody id="snap-body"></tbody>
       </table>
     </div>
   </section>
@@ -338,41 +470,389 @@
 </div>
 
 <script>
-  var previewAllowlisted = false;
+/* ==== LOGIC ==== */
+var NY = 'America/New_York', DUB = 'Europe/Dublin';
+var WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var OPEN_MIN = 570, CLOSE_MIN = 960;   /* 09:30 and 16:00 */
+var _dtf = {};
 
-  function showScreen(name){
-    var screens = ['policy','preview','ledger','markets'];
-    for (var i=0; i<screens.length; i++){
-      document.getElementById('screen-' + screens[i]).classList.remove('active');
-      document.getElementById('nav-' + screens[i]).classList.remove('active');
+function dtf(tz){
+  if (!_dtf[tz]) {
+    _dtf[tz] = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit',
+      day: '2-digit', hour: '2-digit', minute: '2-digit', weekday: 'short'
+    });
+  }
+  return _dtf[tz];
+}
+function parts(ms, tz){
+  var o = {};
+  dtf(tz || NY).formatToParts(new Date(ms)).forEach(function(p){ o[p.type] = p.value; });
+  return { y:+o.year, m:+o.month, d:+o.day, h:(+o.hour)%24, mi:+o.minute, wd:WD.indexOf(o.weekday) };
+}
+function nyToMs(y, m, d, h, mi){
+  var want = Date.UTC(y, m-1, d, h, mi), guess = want;
+  for (var i = 0; i < 3; i++) {
+    var p = parts(guess, NY);
+    guess += want - Date.UTC(p.y, p.m-1, p.d, p.h, p.mi);
+  }
+  return guess;
+}
+function dayShift(y, m, d, k){
+  var dt = new Date(Date.UTC(y, m-1, d+k));
+  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth()+1, d: dt.getUTCDate(), wd: dt.getUTCDay() };
+}
+function pad(n){ return (n < 10 ? '0' : '') + n; }
+function fmt(ms, tz){
+  var p = parts(ms, tz);
+  return WD[p.wd] + ' ' + p.d + ' ' + MON[p.m-1] + ' ' + pad(p.h) + ':' + pad(p.mi);
+}
+function fmtShort(ms, tz){
+  var p = parts(ms, tz);
+  return WD[p.wd] + ' ' + pad(p.h) + ':' + pad(p.mi);
+}
+function money(n){ return Math.round(n).toLocaleString('en-US'); }
+
+function isRegular(ms){
+  var p = parts(ms, NY), mins = p.h*60 + p.mi;
+  return p.wd >= 1 && p.wd <= 5 && mins >= OPEN_MIN && mins < CLOSE_MIN;
+}
+function nextOpenAfter(ms){
+  var p = parts(ms, NY);
+  for (var k = 0; k < 10; k++) {
+    var day = dayShift(p.y, p.m, p.d, k);
+    if (day.wd >= 1 && day.wd <= 5) {
+      var t = nyToMs(day.y, day.m, day.d, 9, 30);
+      if (t >= ms) return t;
     }
-    document.getElementById('screen-' + name).classList.add('active');
-    document.getElementById('nav-' + name).classList.add('active');
+  }
+  return null;
+}
+function lastWindowAtOrBefore(ms){
+  if (isRegular(ms)) return ms;
+  var p = parts(ms, NY);
+  for (var k = 0; k < 10; k++) {
+    var day = dayShift(p.y, p.m, p.d, -k);
+    if (day.wd >= 1 && day.wd <= 5) {
+      var close = nyToMs(day.y, day.m, day.d, 16, 0);
+      if (close <= ms) return close;
+    }
+  }
+  return null;
+}
+
+/* inp: action, amount, spendable, inSleeve, floor, leadH, weekendRule,
+        allowlisted, status, clock, due                                  */
+function core(inp, allowlisted){
+  var checks = [], i;
+  var park = inp.action === 'park';
+  var amountOk = isFinite(inp.amount) && inp.amount > 0;
+  var dueOk = isFinite(inp.due);
+  var D = dueOk ? inp.due - inp.leadH * 3600000 : null;
+
+  /* 1 floor / holdings */
+  var c1 = { label: park ? 'Floor holds after park' : 'Sleeve holds the amount', kind: 'refuse' };
+  if (!amountOk) {
+    c1.state = 'fail'; c1.det = 'Enter an amount above zero.'; c1.reason = 'No amount entered.';
+  } else if (park) {
+    var left = inp.spendable - inp.amount;
+    c1.det = money(inp.spendable) + ' − ' + money(inp.amount) + ' = ' + money(left) + ' · floor ' + money(inp.floor);
+    if (left >= inp.floor) c1.state = 'pass';
+    else { c1.state = 'fail'; c1.reason = 'Parking ' + money(inp.amount) + ' leaves ' + money(left) + ', below the ' + money(inp.floor) + ' floor.'; }
+  } else {
+    c1.det = 'in sleeve ' + money(inp.inSleeve) + ' · recall ' + money(inp.amount);
+    if (inp.inSleeve >= inp.amount) c1.state = 'pass';
+    else { c1.state = 'fail'; c1.reason = 'The sleeve holds ' + money(inp.inSleeve) + ', less than the ' + money(inp.amount) + ' recall.'; }
+  }
+  checks.push(c1);
+
+  /* 2 allowlist */
+  var c2 = { label: 'Wallet allowlisted', kind: 'blocked', det: allowlisted ? 'on the sleeve allowlist' : 'not on the sleeve allowlist' };
+  c2.state = allowlisted ? 'pass' : 'fail';
+  checks.push(c2);
+
+  /* 3 feed and clock agree */
+  var clockReg = isRegular(inp.clock);
+  var feedReg = inp.status === 'regular';
+  var c3 = { label: 'Feed and clock agree', kind: 'refuse',
+    det: 'feed ' + inp.status + ' · clock ' + fmtShort(inp.clock, NY) + ' NY is ' + (clockReg ? 'inside' : 'outside') + ' regular hours' };
+  if (clockReg === feedReg) c3.state = 'pass';
+  else { c3.state = 'fail'; c3.reason = 'The feed reads ' + inp.status + ' but the New York clock says ' + (clockReg ? 'the regular session is open' : 'the regular session is closed') + '. A clash is never an Allow.'; }
+  checks.push(c3);
+
+  /* 4 session, from the feed */
+  var E = feedReg ? inp.clock : nextOpenAfter(inp.clock);
+  var c4 = { label: 'Session from feed', kind: 'info' };
+  if (feedReg) { c4.state = 'pass'; c4.det = 'regular · executes now'; }
+  else { c4.state = 'wait'; c4.det = inp.status + ' · waits for the next open, ' + (E ? fmt(E, NY) + ' NY' : 'none found'); }
+  checks.push(c4);
+
+  /* 5 pull-back window */
+  var R = (dueOk) ? lastWindowAtOrBefore(D) : null;
+  var c5 = { label: 'Pull-back window', kind: 'refuse' };
+  if (!dueOk) {
+    c5.state = 'fail'; c5.det = 'Enter a payment time.'; c5.reason = 'No payment time entered.';
+  } else if (park) {
+    c5.det = 'deadline ' + fmt(D, NY) + ' · last window ' + (R ? fmt(R, NY) : 'none') + ' · executes ' + (E ? fmt(E, NY) : 'never');
+    if (R && E && R > E) c5.state = 'pass';
+    else { c5.state = 'fail'; c5.reason = 'No regular window between execution (' + (E ? fmt(E, NY) : 'never') + ') and the pull-back deadline (' + fmt(D, NY) + '). Cash could not come back in time.'; }
+  } else {
+    c5.det = 'deadline ' + fmt(D, NY) + ' · executes ' + (E ? fmt(E, NY) : 'never');
+    if (E && E <= D) c5.state = 'pass';
+    else { c5.state = 'fail'; c5.reason = 'The next window (' + (E ? fmt(E, NY) : 'none') + ') is after the pull-back deadline (' + fmt(D, NY) + ').'; }
+  }
+  checks.push(c5);
+
+  /* 6 weekend rule */
+  var c6 = { label: 'Weekend rule', kind: 'refuse' };
+  if (!dueOk) { c6.state = 'na'; c6.det = '—'; }
+  else {
+    var dw = parts(D, NY).wd, onWeekend = (dw === 0 || dw === 6);
+    if (onWeekend && inp.weekendRule === 'refuse') {
+      c6.state = 'fail'; c6.det = 'deadline falls on ' + WD[dw] + ' · rule: refuse';
+      c6.reason = 'The pull-back deadline falls on a weekend and the policy refuses that.';
+    } else if (onWeekend) { c6.state = 'pass'; c6.det = 'deadline falls on ' + WD[dw] + ' · last Friday close used'; }
+    else { c6.state = 'pass'; c6.det = 'deadline falls on ' + WD[dw]; }
+  }
+  checks.push(c6);
+
+  var verdict, reason, hardFail = null;
+  for (i = 0; i < checks.length; i++) {
+    if (checks[i].state === 'fail' && checks[i].kind === 'refuse') { hardFail = checks[i]; break; }
+  }
+  if (hardFail) { verdict = 'Refuse'; reason = hardFail.reason; }
+  else if (!allowlisted) { verdict = 'Blocked'; reason = 'This wallet is not on the sleeve’s allowlist.'; }
+  else if (feedReg) {
+    verdict = 'Allow';
+    reason = 'Feed reads regular, the checks pass, and a window remains before the pull-back deadline' + (dueOk ? ' (' + fmt(D, NY) + ' NY).' : '.');
+  } else {
+    verdict = 'Queue';
+    reason = 'Feed reads ' + inp.status + '. The hop waits for the open at ' + fmt(E, NY) + ' NY and still has time to pull back.';
+  }
+  return { verdict: verdict, reason: reason, checks: checks, E: E, R: R, D: D, settlesNow: verdict === 'Allow' };
+}
+
+function decide(inp){
+  var res = core(inp, inp.allowlisted);
+  res.afterFix = null;
+  if (res.verdict === 'Blocked') res.afterFix = core(inp, true).verdict;
+  return res;
+}
+
+function marketDecision(status){
+  if (status === 'regular') return { verdict: 'Allow', why: 'Feed reads regular.' };
+  return { verdict: 'Refuse', why: 'Feed reads ' + status + '. Allow needs regular.' };
+}
+
+/* ==== DATA ==== */
+var SCENARIOS = [
+  { id: 'a', real: true,  label: 'Saved call · Thu 8 Oct 18:31 NY · postmarket',
+    clock: Date.parse('2026-10-08T22:31:18Z'), status: 'postmarket', due: '2026-10-12T14:00' },
+  { id: 'b', real: false, label: 'Simulated · Mon 12 Oct 11:00 NY · regular',
+    clock: Date.parse('2026-10-12T15:00:00Z'), status: 'regular', due: '2026-10-14T14:00' },
+  { id: 'c', real: false, label: 'Simulated · Sat 10 Oct 11:00 NY · closed',
+    clock: Date.parse('2026-10-10T15:00:00Z'), status: 'closed', due: '2026-10-11T12:00' },
+  { id: 'd', real: false, label: 'Simulated · Mon 12 Oct 11:00 NY · feed says postmarket',
+    clock: Date.parse('2026-10-12T15:00:00Z'), status: 'postmarket', due: '2026-10-14T14:00' }
+];
+
+var SNAPSHOTS = [
+  { id: '7', label: '7 Oct · premarket',
+    note: 'Saved BSC call, 7 October, chain 56, code 0. Premarket. Not a live request. No trades.',
+    rows: [
+      { sym: 'FCELon', platform: 'ondo', price: '19.98', status: 'premarket' },
+      { sym: 'CIENon', platform: 'ondo', price: '429.2', status: 'premarket' },
+      { sym: 'SOXSon', platform: 'ondo', price: '—', status: 'premarket' }
+    ] },
+  { id: '8', label: '8 Oct · postmarket',
+    note: 'Saved BSC call, 8 October, chain 56, code 0. Postmarket. Not a live request. No trades.',
+    rows: [
+      { sym: 'SOXSon', platform: 'ondo', price: '0.35', status: 'postmarket' },
+      { sym: 'CMGon', platform: 'ondo', price: '32.70', status: 'postmarket' },
+      { sym: 'ACNon', platform: 'ondo', price: '221.33', status: 'postmarket' }
+    ] }
+];
+
+/* ==== UI ==== */
+var activeSnap = 0;
+
+function $(id){ return document.getElementById(id); }
+function num(id){ var v = parseFloat($(id).value); return isFinite(v) ? v : NaN; }
+function currentScenario(){ return SCENARIOS[$('v-scn').selectedIndex] || SCENARIOS[0]; }
+
+function showScreen(name){
+  var screens = ['policy','preview','ledger','markets'];
+  for (var i = 0; i < screens.length; i++) {
+    $('screen-' + screens[i]).classList.remove('active');
+    $('nav-' + screens[i]).classList.remove('active');
+  }
+  $('screen-' + name).classList.add('active');
+  $('nav-' + name).classList.add('active');
+}
+
+function readInputs(){
+  var scn = currentScenario();
+  var dueStr = $('v-due').value, due = NaN;
+  if (dueStr) {
+    var m = dueStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (m) due = nyToMs(+m[1], +m[2], +m[3], +m[4], +m[5]);
+  }
+  return {
+    action: $('v-action').value,
+    amount: num('v-amount'),
+    spendable: num('p-spend'),
+    inSleeve: num('p-insleeve'),
+    floor: num('p-floor'),
+    leadH: isFinite(num('p-lead')) ? num('p-lead') : 0,
+    weekendRule: $('p-weekend').value,
+    allowlisted: $('v-allow').value === 'yes',
+    status: scn.status,
+    clock: scn.clock,
+    due: due
+  };
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function drawRuler(inp, res){
+  var W = 960, padL = 16, padR = 16;
+  var markers = [{ t: inp.clock, label: 'NOW' }];
+  if (res.E && res.E !== inp.clock) markers.push({ t: res.E, label: 'EXEC' });
+  if (inp.action === 'park' && res.R) markers.push({ t: res.R, label: 'LAST WINDOW' });
+  if (isFinite(res.D)) markers.push({ t: res.D, label: 'PULL BACK BY' });
+  if (isFinite(inp.due)) markers.push({ t: inp.due, label: 'DUE' });
+  markers.sort(function(a, b){ return a.t - b.t; });
+
+  var tmin = markers[0].t, tmax = markers[markers.length-1].t, i;
+  var t0 = tmin - 3*3600000, t1 = tmax + 3*3600000;
+  if (t1 - t0 < 12*3600000) t1 = t0 + 12*3600000;
+  function X(t){ return padL + (t - t0) / (t1 - t0) * (W - padL - padR); }
+
+  var rowH = 20, top = 12 + markers.length * rowH + 6, barH = 26, H = top + barH + 34;
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Settlement window timeline">';
+  s += '<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#f6e6e2"/><line x1="0" y1="0" x2="0" y2="6" stroke="#c98f84" stroke-width="2"/></pattern></defs>';
+
+  var p0 = parts(t0, NY), p1 = parts(t1, NY);
+  var last = Date.UTC(p1.y, p1.m-1, p1.d);
+  for (var k = 0; ; k++) {
+    var day = dayShift(p0.y, p0.m, p0.d, k);
+    if (Date.UTC(day.y, day.m-1, day.d) > last) break;
+    var mid = nyToMs(day.y, day.m, day.d, 0, 0);
+    var weekday = day.wd >= 1 && day.wd <= 5;
+    var segs = weekday ? [
+      [nyToMs(day.y, day.m, day.d, 4, 0),  nyToMs(day.y, day.m, day.d, 9, 30), 'var(--band-ext)'],
+      [nyToMs(day.y, day.m, day.d, 9, 30), nyToMs(day.y, day.m, day.d, 16, 0), 'var(--band-reg)'],
+      [nyToMs(day.y, day.m, day.d, 16, 0), nyToMs(day.y, day.m, day.d, 20, 0), 'var(--band-ext)']
+    ] : [];
+    for (i = 0; i < segs.length; i++) {
+      var a = Math.max(segs[i][0], t0), b = Math.min(segs[i][1], t1);
+      if (b > a) s += '<rect x="' + X(a).toFixed(1) + '" y="' + top + '" width="' + (X(b) - X(a)).toFixed(1) + '" height="' + barH + '" fill="' + segs[i][2] + '"/>';
+    }
+    if (mid > t0 && mid < t1) {
+      s += '<line x1="' + X(mid).toFixed(1) + '" x2="' + X(mid).toFixed(1) + '" y1="' + top + '" y2="' + (top + barH + 8) + '" stroke="#9a9d96" stroke-width="1"/>';
+    }
+    var lx = X(Math.max(mid, t0)) + 4;
+    s += '<text class="dim" x="' + lx.toFixed(1) + '" y="' + (top + barH + 25) + '">' + WD[day.wd] + ' ' + day.d + ' ' + MON[day.m-1] + '</text>';
   }
 
-  function togglePreview(){
-    previewAllowlisted = !previewAllowlisted;
-    var answer = document.getElementById('answer');
-    var reason = document.getElementById('reason');
-    var primary = document.getElementById('primary-btn');
-    var secondary = document.getElementById('secondary-btn');
-
-    if (previewAllowlisted){
-      answer.textContent = 'YES';
-      answer.className = 'answer yes';
-      reason.textContent = 'Demo path only. A real hop still depends on cutoff, buffer, and transfer-agent rules.';
-      primary.disabled = false;
-      primary.textContent = 'Queue hop';
-      secondary.textContent = 'Show blocked preview';
-    } else {
-      answer.textContent = 'NO';
-      answer.className = 'answer no';
-      reason.textContent = 'Blocked. Demo wallet is not allowlisted for the yield sleeve.';
-      primary.disabled = true;
-      primary.textContent = 'Blocked';
-      secondary.textContent = 'Show allowlisted preview';
-    }
+  if (isFinite(res.D) && isFinite(inp.due) && inp.due > res.D) {
+    s += '<rect x="' + X(res.D).toFixed(1) + '" y="' + (top - 4) + '" width="' + (X(inp.due) - X(res.D)).toFixed(1) + '" height="' + (barH + 8) + '" fill="url(#hatch)" opacity="0.75"/>';
   }
+
+  for (i = 0; i < markers.length; i++) {
+    var mx = X(markers[i].t), ly = 16 + i * rowH, right = mx > W * 0.72;
+    s += '<line x1="' + mx.toFixed(1) + '" x2="' + mx.toFixed(1) + '" y1="' + (ly + 3) + '" y2="' + (top + barH + 4) + '" stroke="#1f2420" stroke-width="1.5"/>';
+    s += '<text x="' + (mx + (right ? -5 : 5)).toFixed(1) + '" y="' + ly + '" text-anchor="' + (right ? 'end' : 'start') + '" font-weight="600">' + esc(markers[i].label) + ' ' + esc(fmtShort(markers[i].t, NY)) + '</text>';
+  }
+  s += '</svg>';
+  s += '<div class="legend"><span><i style="background:var(--band-reg)"></i>Regular 09:30–16:00</span><span><i style="background:var(--band-ext)"></i>Extended hours</span><span><i style="background:repeating-linear-gradient(45deg,#f6e6e2,#f6e6e2 3px,#c98f84 3px,#c98f84 5px)"></i>Pull-back lead time</span><span>blank = closed</span></div>';
+  $('ruler').innerHTML = s;
+}
+
+function render(){
+  var scn = currentScenario();
+  var inp = readInputs();
+  var res = decide(inp);
+
+  $('clock').innerHTML = 'scenario clock<br><b>' + esc(fmt(scn.clock, NY)) + ' New York</b><br>' + esc(fmt(scn.clock, DUB)) + ' Dublin';
+  $('scn-tag').className = 'tag ' + (scn.real ? 'real' : 'sim');
+  $('scn-tag').textContent = scn.real ? 'saved API call' : 'simulated, not a feed reading';
+
+  var v = res.verdict, cls = 'v-' + v.toLowerCase();
+  var h = '<div class="top"><span>SETTLES NOW: <b>' + (res.settlesNow ? 'YES' : 'NO') + '</b></span><span>ROUTE: <b>' + v.toUpperCase() + '</b></span></div>';
+  h += '<div class="word">' + v.toUpperCase() + '</div>';
+  h += '<p class="why">' + esc(res.reason) + '</p>';
+  if (res.afterFix) h += '<p class="after">AFTER ALLOWLIST FIX: ' + res.afterFix.toUpperCase() + '</p>';
+  $('verdict').className = 'verdict ' + cls;
+  $('verdict').innerHTML = h;
+
+  var c = '';
+  for (var i = 0; i < res.checks.length; i++) {
+    var k = res.checks[i], st = k.state, word = st === 'pass' ? 'PASS' : st === 'fail' ? 'FAIL' : st === 'wait' ? 'WAIT' : '—';
+    c += '<div class="chk ' + st + '"><span class="n">' + (i + 1) + '</span><span>' + esc(k.label) + '</span><span class="det">' + esc(k.det || '') + '</span><span class="res">' + word + '</span></div>';
+  }
+  $('checks').innerHTML = c;
+
+  drawRuler(inp, res);
+  renderMarkets();
+}
+
+function renderMarkets(){
+  var snap = SNAPSHOTS[activeSnap], seg = '', body = '', i;
+  for (i = 0; i < SNAPSHOTS.length; i++) {
+    seg += '<button class="' + (i === activeSnap ? 'active' : '') + '" onclick="setSnap(' + i + ')">' + esc(SNAPSHOTS[i].label) + '</button>';
+  }
+  $('snap-seg').innerHTML = seg;
+  $('snap-note').textContent = snap.note;
+  for (i = 0; i < snap.rows.length; i++) {
+    var r = snap.rows[i], d = marketDecision(r.status);
+    body += '<tr><td class="mono">' + esc(r.sym) + '</td><td>' + esc(r.platform) + '</td><td class="num">' + esc(r.price) + '</td>' +
+      '<td><span class="result nav">open, ' + esc(r.status) + '</span></td>' +
+      '<td><span class="result ' + (d.verdict === 'Allow' ? 'nav' : 'refused') + '">' + d.verdict + '</span><span class="why-s">' + esc(d.why) + '</span></td></tr>';
+  }
+  $('snap-body').innerHTML = body;
+}
+
+function setSnap(i){ activeSnap = i; renderMarkets(); }
+
+function setScenarioDefaults(){
+  var scn = currentScenario();
+  $('v-due').value = scn.due;
+  render();
+}
+
+function recordDecision(){
+  var scn = currentScenario(), inp = readInputs(), res = decide(inp);
+  var cls = res.verdict === 'Allow' ? 'nav' : res.verdict === 'Queue' ? 'queued' : res.verdict === 'Blocked' ? 'blocked' : 'refused';
+  var text = res.verdict === 'Allow' ? 'Allowed — would settle now (demo)'
+           : res.verdict === 'Queue' ? 'Queued — waits for ' + fmt(res.E, NY) + ' NY'
+           : res.verdict === 'Blocked' ? 'Blocked — wallet not allowlisted'
+           : 'Refused — ' + res.reason;
+  var tr = document.createElement('tr');
+  tr.className = 'fresh';
+  tr.innerHTML = '<td class="mono">' + esc(fmtShort(scn.clock, NY)) + ' NY</td><td>' + (inp.action === 'park' ? 'Park' : 'Recall') +
+    '</td><td class="num">' + (isFinite(inp.amount) ? money(inp.amount) : '—') + '</td><td><span class="result ' + cls + '">' + esc(text) + '</span></td>';
+  var body = $('ledger-body');
+  body.insertBefore(tr, body.firstChild);
+  showScreen('ledger');
+}
+
+(function init(){
+  var sel = $('v-scn'), i;
+  for (i = 0; i < SCENARIOS.length; i++) {
+    var o = document.createElement('option');
+    o.textContent = SCENARIOS[i].label;
+    sel.appendChild(o);
+  }
+  var ids = ['p-floor','p-lead','p-weekend','p-spend','p-insleeve','v-action','v-amount','v-due','v-allow'];
+  for (i = 0; i < ids.length; i++) {
+    $(ids[i]).addEventListener('input', render);
+    $(ids[i]).addEventListener('change', render);
+  }
+  sel.addEventListener('change', setScenarioDefaults);
+  setScenarioDefaults();
+})();
 </script>
 </body>
 </html>
