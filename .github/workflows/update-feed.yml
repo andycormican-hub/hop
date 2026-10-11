@@ -5,8 +5,6 @@ name: Update market feed
 # time, so main's history stays clean. Run it by hand from the Actions tab with
 # "Run workflow" to test.
 on:
-  schedule:
-    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
