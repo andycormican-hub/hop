@@ -475,6 +475,8 @@ var NY = 'America/New_York', DUB = 'Europe/Dublin';
 var WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var OPEN_MIN = 570, CLOSE_MIN = 960;   /* 09:30 and 16:00 */
+var MAX_AGE_MS = 30 * 60000;           /* a live feed older than this is stale */
+var FEED_URL = 'https://raw.githubusercontent.com/andycormican-hub/hop/feed/markets.json';
 var _dtf = {};
 
 function dtf(tz){
@@ -581,6 +583,17 @@ function core(inp, allowlisted){
   else { c3.state = 'fail'; c3.reason = 'The feed reads ' + inp.status + ' but the New York clock says ' + (clockReg ? 'the regular session is open' : 'the regular session is closed') + '. A clash is never an Allow.'; }
   checks.push(c3);
 
+  /* 3b feed freshness (live feed only) */
+  var c3b = { label: 'Feed is fresh', kind: 'refuse' };
+  if (inp.feedAge === null || inp.feedAge === undefined) { c3b.state = 'na'; c3b.det = 'saved snapshot, not a live reading'; }
+  else {
+    var ageMin = Math.round(inp.feedAge / 60000);
+    c3b.det = 'updated ' + ageMin + ' min ago \u00B7 limit ' + (MAX_AGE_MS / 60000) + ' min';
+    if (inp.feedAge <= MAX_AGE_MS) c3b.state = 'pass';
+    else { c3b.state = 'fail'; c3b.reason = 'The live feed is ' + ageMin + ' minutes old, past the ' + (MAX_AGE_MS / 60000) + ' minute limit. Stale data is never an Allow.'; }
+  }
+  checks.push(c3b);
+
   /* 4 session, from the feed */
   var E = feedReg ? inp.clock : nextOpenAfter(inp.clock);
   var c4 = { label: 'Session from feed', kind: 'info' };
@@ -640,13 +653,29 @@ function decide(inp){
   return res;
 }
 
-function marketDecision(status){
-  if (status === 'regular') return { verdict: 'Allow', why: 'Feed reads regular.' };
-  return { verdict: 'Refuse', why: 'Feed reads ' + status + '. Allow needs regular.' };
+function marketDecision(status, open){
+  if (status === 'unknown') return { verdict: 'Refuse', why: 'The feed gives no market status for this token. HOP will not guess.' };
+  if (status === 'offhours') return { verdict: 'Refuse', why: 'Extended session (offhours). Allow needs regular.' };
+  if (status !== 'regular') return { verdict: 'Refuse', why: 'Feed reads ' + status + '. Allow needs regular.' };
+  if (open === false) return { verdict: 'Refuse', why: 'Feed reads regular but trading is not open for this token.' };
+  return { verdict: 'Allow', why: 'Feed reads regular.' };
+}
+
+/* The live feed: one status for the whole list. Rows that carry no market status
+   ('unknown') are refused one by one on the Markets tab and do not count here.
+   Among rows that do carry a status: all agree -> that status, otherwise mixed.
+   Regular is only reported when every row with a status says regular. */
+function feedStatus(feed){
+  var keys = Object.keys(feed.status_counts || {}).filter(function(k){ return k !== 'unknown'; });
+  if (keys.length === 1) return keys[0];
+  if (keys.length === 0) return 'unknown';
+  return 'mixed';
 }
 
 /* ==== DATA ==== */
 var SCENARIOS = [
+  { id: 'r', real: true,  label: 'Saved call · Mon 12 Oct 15:44 NY · regular',
+    clock: Date.parse('2026-10-12T19:44:37Z'), status: 'regular', due: '2026-10-14T14:00' },
   { id: 'a', real: true,  label: 'Saved call · Thu 8 Oct 18:31 NY · postmarket',
     clock: Date.parse('2026-10-08T22:31:18Z'), status: 'postmarket', due: '2026-10-12T14:00' },
   { id: 'b', real: false, label: 'Simulated · Mon 12 Oct 11:00 NY · regular',
@@ -658,6 +687,22 @@ var SCENARIOS = [
 ];
 
 var SNAPSHOTS = [
+  { id: '12', label: '12 Oct · regular',
+    note: 'Saved BSC call, Mon 12 Oct 15:44 NY, chain 56, code 0. 442 regular, 46 with no market status. Showing the 12 most traded. Not a live request. No trades.',
+    rows: [
+      { sym: 'MUB', platform: 'bstock', price: '987.41', status: 'unknown', open: true },
+      { sym: 'MUon', platform: 'ondo', price: '988.35', status: 'regular', open: true },
+      { sym: 'METAB', platform: 'bstock', price: '745.14', status: 'unknown', open: true },
+      { sym: 'METAon', platform: 'ondo', price: '748.07', status: 'regular', open: true },
+      { sym: 'QQQon', platform: 'ondo', price: '752.02', status: 'regular', open: true },
+      { sym: 'QQQB', platform: 'bstock', price: '747.43', status: 'unknown', open: true },
+      { sym: 'NVDAB', platform: 'bstock', price: '227.17', status: 'unknown', open: true },
+      { sym: 'NVDAon', platform: 'ondo', price: '227.51', status: 'regular', open: true },
+      { sym: 'SNDKon', platform: 'ondo', price: '1488.13', status: 'regular', open: true },
+      { sym: 'SNDKB', platform: 'bstock', price: '1489.17', status: 'unknown', open: true },
+      { sym: 'SPYB', platform: 'bstock', price: '779.95', status: 'unknown', open: true },
+      { sym: 'SPYon', platform: 'ondo', price: '792.59', status: 'regular', open: true }
+    ] },
   { id: '7', label: '7 Oct · premarket',
     note: 'Saved BSC call, 7 October, chain 56, code 0. Premarket. Not a live request. No trades.',
     rows: [
@@ -676,10 +721,52 @@ var SNAPSHOTS = [
 
 /* ==== UI ==== */
 var activeSnap = 0;
+var feed = null, feedError = false, liveScn = null, feedFirst = true;
+
+function scenarios(){ return liveScn ? [liveScn].concat(SCENARIOS) : SCENARIOS; }
+function snapshots(){
+  if (!feed) return SNAPSHOTS;
+  var ageMin = Math.round((Date.now() - Date.parse(feed.fetched_at)) / 60000);
+  var counts = Object.keys(feed.status_counts).map(function(k){ return feed.status_counts[k] + ' ' + k; }).join(', ');
+  return [{ id: 'live', label: 'Live feed',
+    note: 'Live BSC feed, chain 56. ' + feed.count + ' tokens: ' + counts + '. Updated ' + fmt(Date.parse(feed.fetched_at), NY) + ' NY, ' + ageMin + ' min ago. ' + (feed.status_counts.unknown ? feed.status_counts.unknown + (feed.status_counts.unknown === 1 ? ' token has' : ' tokens have') + ' no market status and ' + (feed.status_counts.unknown === 1 ? 'is' : 'are') + ' refused one by one. ' : '') + 'Showing the 20 most traded. Read-only, no trades.',
+    live: true,
+    rows: feed.rows.slice(0, 20).map(function(r){ return { sym: r.symbol, platform: r.platform, price: r.price, status: r.status, open: r.open }; }) }].concat(SNAPSHOTS);
+}
+function defaultDue(nowMs){
+  var p = parts(nowMs + 2 * 86400000, NY);
+  return p.y + '-' + pad(p.m) + '-' + pad(p.d) + 'T14:00';
+}
+function buildScenarioOptions(selectId){
+  var sel = $('v-scn'), list = scenarios(), i;
+  sel.innerHTML = '';
+  for (i = 0; i < list.length; i++) {
+    var o = document.createElement('option');
+    o.textContent = list[i].live
+      ? 'Live feed \u00B7 updated ' + fmtShort(list[i].fetchedMs, NY) + ' NY \u00B7 ' + list[i].status
+      : list[i].label;
+    sel.appendChild(o);
+  }
+  for (i = 0; i < list.length; i++) if (list[i].id === selectId) sel.selectedIndex = i;
+}
+function setFeed(d){
+  feed = d; feedError = false;
+  liveScn = { id: 'live', live: true, real: true, fetchedMs: Date.parse(d.fetched_at), status: feedStatus(d) };
+  var keep = feedFirst ? 'live' : currentScenario().id;
+  buildScenarioOptions(keep);
+  if (feedFirst) { $('v-due').value = defaultDue(Date.now()); activeSnap = 0; feedFirst = false; }
+  render();
+}
+function loadFeed(){
+  fetch(FEED_URL + '?t=' + Date.now(), { cache: 'no-store' })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(d){ if (!d || !d.rows || !d.fetched_at) throw new Error('bad feed'); setFeed(d); })
+    .catch(function(){ if (!feed) { feedError = true; render(); } });
+}
 
 function $(id){ return document.getElementById(id); }
 function num(id){ var v = parseFloat($(id).value); return isFinite(v) ? v : NaN; }
-function currentScenario(){ return SCENARIOS[$('v-scn').selectedIndex] || SCENARIOS[0]; }
+function currentScenario(){ var l = scenarios(); return l[$('v-scn').selectedIndex] || l[0]; }
 
 function showScreen(name){
   var screens = ['policy','preview','ledger','markets'];
@@ -708,7 +795,8 @@ function readInputs(){
     weekendRule: $('p-weekend').value,
     allowlisted: $('v-allow').value === 'yes',
     status: scn.status,
-    clock: scn.clock,
+    clock: scn.live ? Date.now() : scn.clock,
+    feedAge: scn.live ? Date.now() - scn.fetchedMs : null,
     due: due
   };
 }
@@ -775,9 +863,10 @@ function render(){
   var inp = readInputs();
   var res = decide(inp);
 
-  $('clock').innerHTML = 'scenario clock<br><b>' + esc(fmt(scn.clock, NY)) + ' New York</b><br>' + esc(fmt(scn.clock, DUB)) + ' Dublin';
+  var nowClock = scn.live ? Date.now() : scn.clock;
+  $('clock').innerHTML = (scn.live ? 'live feed \u00B7 updated ' + esc(fmtShort(scn.fetchedMs, NY)) + ' NY' : 'scenario clock') + '<br><b>' + esc(fmt(nowClock, NY)) + ' New York</b><br>' + esc(fmt(nowClock, DUB)) + ' Dublin';
   $('scn-tag').className = 'tag ' + (scn.real ? 'real' : 'sim');
-  $('scn-tag').textContent = scn.real ? 'saved API call' : 'simulated, not a feed reading';
+  $('scn-tag').textContent = scn.live ? 'live feed, auto-updated' : scn.real ? 'saved API call' : 'simulated, not a feed reading';
 
   var v = res.verdict, cls = 'v-' + v.toLowerCase();
   var h = '<div class="top"><span>SETTLES NOW: <b>' + (res.settlesNow ? 'YES' : 'NO') + '</b></span><span>ROUTE: <b>' + v.toUpperCase() + '</b></span></div>';
@@ -799,16 +888,18 @@ function render(){
 }
 
 function renderMarkets(){
-  var snap = SNAPSHOTS[activeSnap], seg = '', body = '', i;
-  for (i = 0; i < SNAPSHOTS.length; i++) {
-    seg += '<button class="' + (i === activeSnap ? 'active' : '') + '" onclick="setSnap(' + i + ')">' + esc(SNAPSHOTS[i].label) + '</button>';
+  var list = snapshots(), seg = '', body = '', i;
+  if (activeSnap >= list.length) activeSnap = 0;
+  var snap = list[activeSnap];
+  for (i = 0; i < list.length; i++) {
+    seg += '<button class="' + (i === activeSnap ? 'active' : '') + '" onclick="setSnap(' + i + ')">' + esc(list[i].label) + '</button>';
   }
   $('snap-seg').innerHTML = seg;
-  $('snap-note').textContent = snap.note;
+  $('snap-note').textContent = snap.note + (feedError && !feed ? ' Live feed unavailable, showing saved calls.' : '');
   for (i = 0; i < snap.rows.length; i++) {
-    var r = snap.rows[i], d = marketDecision(r.status);
+    var r = snap.rows[i], d = marketDecision(r.status, r.open);
     body += '<tr><td class="mono">' + esc(r.sym) + '</td><td>' + esc(r.platform) + '</td><td class="num">' + esc(r.price) + '</td>' +
-      '<td><span class="result nav">open, ' + esc(r.status) + '</span></td>' +
+      '<td><span class="result ' + (r.status === 'regular' ? 'nav' : r.status === 'unknown' ? 'refused' : 'queued') + '">' + (r.status === 'unknown' ? 'no status' : (r.open === false ? 'closed, ' : 'open, ') + esc(r.status)) + '</span></td>' +
       '<td><span class="result ' + (d.verdict === 'Allow' ? 'nav' : 'refused') + '">' + d.verdict + '</span><span class="why-s">' + esc(d.why) + '</span></td></tr>';
   }
   $('snap-body').innerHTML = body;
@@ -818,7 +909,7 @@ function setSnap(i){ activeSnap = i; renderMarkets(); }
 
 function setScenarioDefaults(){
   var scn = currentScenario();
-  $('v-due').value = scn.due;
+  $('v-due').value = scn.live ? defaultDue(Date.now()) : scn.due;
   render();
 }
 
@@ -840,11 +931,7 @@ function recordDecision(){
 
 (function init(){
   var sel = $('v-scn'), i;
-  for (i = 0; i < SCENARIOS.length; i++) {
-    var o = document.createElement('option');
-    o.textContent = SCENARIOS[i].label;
-    sel.appendChild(o);
-  }
+  buildScenarioOptions('r');
   var ids = ['p-floor','p-lead','p-weekend','p-spend','p-insleeve','v-action','v-amount','v-due','v-allow'];
   for (i = 0; i < ids.length; i++) {
     $(ids[i]).addEventListener('input', render);
@@ -852,6 +939,9 @@ function recordDecision(){
   }
   sel.addEventListener('change', setScenarioDefaults);
   setScenarioDefaults();
+  loadFeed();
+  setInterval(loadFeed, 60000);
+  setInterval(render, 30000);
 })();
 </script>
 </body>
