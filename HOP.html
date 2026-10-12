@@ -653,8 +653,9 @@ function decide(inp){
   return res;
 }
 
-function marketDecision(status, open){
+function marketDecision(status, open, reason){
   if (status === 'unknown') return { verdict: 'Refuse', why: 'The feed gives no market status for this token. HOP will not guess.' };
+  if (reason === 'UNSUPPORTED') return { verdict: 'Refuse', why: 'Not supported in this session (feed reads ' + status + '). Allow needs regular and a supported token.' };
   if (status === 'offhours') return { verdict: 'Refuse', why: 'Extended session (offhours). Allow needs regular.' };
   if (status !== 'regular') return { verdict: 'Refuse', why: 'Feed reads ' + status + '. Allow needs regular.' };
   if (open === false) return { verdict: 'Refuse', why: 'Feed reads regular but trading is not open for this token.' };
@@ -731,7 +732,7 @@ function snapshots(){
   return [{ id: 'live', label: 'Live feed',
     note: 'Live BSC feed, chain 56. ' + feed.count + ' tokens: ' + counts + '. Updated ' + fmt(Date.parse(feed.fetched_at), NY) + ' NY, ' + ageMin + ' min ago. ' + (feed.status_counts.unknown ? feed.status_counts.unknown + (feed.status_counts.unknown === 1 ? ' token has' : ' tokens have') + ' no market status and ' + (feed.status_counts.unknown === 1 ? 'is' : 'are') + ' refused one by one. ' : '') + 'Showing the 20 most traded. Read-only, no trades.',
     live: true,
-    rows: feed.rows.slice(0, 20).map(function(r){ return { sym: r.symbol, platform: r.platform, price: r.price, status: r.status, open: r.open }; }) }].concat(SNAPSHOTS);
+    rows: feed.rows.slice(0, 20).map(function(r){ return { sym: r.symbol, platform: r.platform, price: r.price, status: r.status, open: r.open, reason: r.reason }; }) }].concat(SNAPSHOTS);
 }
 function defaultDue(nowMs){
   var p = parts(nowMs + 2 * 86400000, NY);
@@ -887,6 +888,14 @@ function render(){
   renderMarkets();
 }
 
+/* Plain-language label for a feed row's state. */
+function statusLabel(r){
+  if (r.status === 'unknown') return 'no status';
+  if (r.reason === 'UNSUPPORTED') return 'not supported now, ' + esc(r.status);
+  if (r.status === 'closed') return 'closed';
+  return (r.open === false ? 'closed, ' : 'open, ') + esc(r.status);
+}
+
 function renderMarkets(){
   var list = snapshots(), seg = '', body = '', i;
   if (activeSnap >= list.length) activeSnap = 0;
@@ -897,9 +906,9 @@ function renderMarkets(){
   $('snap-seg').innerHTML = seg;
   $('snap-note').textContent = snap.note + (feedError && !feed ? ' Live feed unavailable, showing saved calls.' : '');
   for (i = 0; i < snap.rows.length; i++) {
-    var r = snap.rows[i], d = marketDecision(r.status, r.open);
+    var r = snap.rows[i], d = marketDecision(r.status, r.open, r.reason);
     body += '<tr><td class="mono">' + esc(r.sym) + '</td><td>' + esc(r.platform) + '</td><td class="num">' + esc(r.price) + '</td>' +
-      '<td><span class="result ' + (r.status === 'regular' ? 'nav' : r.status === 'unknown' ? 'refused' : 'queued') + '">' + (r.status === 'unknown' ? 'no status' : (r.open === false ? 'closed, ' : 'open, ') + esc(r.status)) + '</span></td>' +
+      '<td><span class="result ' + (r.status === 'regular' ? 'nav' : r.status === 'unknown' ? 'refused' : 'queued') + '">' + statusLabel(r) + '</span></td>' +
       '<td><span class="result ' + (d.verdict === 'Allow' ? 'nav' : 'refused') + '">' + d.verdict + '</span><span class="why-s">' + esc(d.why) + '</span></td></tr>';
   }
   $('snap-body').innerHTML = body;
