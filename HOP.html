@@ -363,7 +363,7 @@
       </div>
     </div>
 
-    <p class="note">Model: redemption windows are the regular US session, Monday to Friday, 09:30 to 16:00 New York. Market holidays and issuer cut-offs are not modeled. Demo only.</p>
+    <p class="note">Model: redemption windows are the regular US session, Monday to Friday, 09:30 to 16:00 New York, with the last 2 minutes held back because the live feed left regular about a minute before 16:00 on 14 Oct. Market holidays and issuer cut-offs are not modeled. Demo only.</p>
   </section>
 
   <!-- PREVIEW -->
@@ -463,6 +463,32 @@
         <tbody id="snap-body"></tbody>
       </table>
     </div>
+    <div class="panel">
+      <p class="note"><strong>What real sessions looked like.</strong> Statuses per call from the live feed (488 tokens, 46 of them with no status throughout). Times are Irish time, as printed by the capture on the Mac that made the calls. One session each, so treat as evidence, not rule.</p>
+      <table>
+        <thead><tr><th>Open, Tue 13 Oct</th><th>Regular</th><th>Paused</th><th>Premarket</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">14:27</td><td class="num">0</td><td class="num">39</td><td class="num">403</td></tr>
+          <tr><td class="mono">14:29</td><td class="num">0</td><td class="num">325</td><td class="num">117</td></tr>
+          <tr><td class="mono">14:31</td><td class="num">424</td><td class="num">18</td><td class="num">0</td></tr>
+          <tr><td class="mono">14:33</td><td class="num">442</td><td class="num">0</td><td class="num">0</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th>Close, Wed 14 Oct</th><th>Regular</th><th>Paused</th><th>Postmarket (trading / unsupported)</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">20:58:33</td><td class="num">442</td><td class="num">0</td><td class="num">0</td></tr>
+          <tr><td class="mono">20:59:04</td><td class="num">129</td><td class="num">313</td><td class="num">0</td></tr>
+          <tr><td class="mono">20:59:36</td><td class="num">1</td><td class="num">441</td><td class="num">0</td></tr>
+          <tr><td class="mono">21:00:08</td><td class="num">0</td><td class="num">442</td><td class="num">0</td></tr>
+          <tr><td class="mono">21:00:39</td><td class="num">0</td><td class="num">442</td><td class="num">0</td></tr>
+          <tr><td class="mono">21:01:10</td><td class="num">0</td><td class="num">109</td><td class="num">265 / 68</td></tr>
+          <tr><td class="mono">21:01:42</td><td class="num">0</td><td class="num">84</td><td class="num">290 / 68</td></tr>
+          <tr><td class="mono">21:02:13</td><td class="num">0</td><td class="num">0</td><td class="num">320 / 122</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Paused carries the reason MARKET_PAUSED. Why it is paused is not stated by the feed. The feed left regular about a minute before 16:00 New York, so HOP treats the last 2 minutes of the session as closed.</p>
+    </div>
   </section>
 
   <footer>Demo only. Does not move client funds. Not an offer of securities.</footer>
@@ -475,6 +501,7 @@ var NY = 'America/New_York', DUB = 'Europe/Dublin';
 var WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var OPEN_MIN = 570, CLOSE_MIN = 960;   /* 09:30 and 16:00 */
+var CLOSE_BUF_MIN = 2;                 /* real feed left regular about a minute before 16:00 on 14 Oct, so the usable window ends 2 min early */
 var MAX_AGE_MS = 30 * 60000;           /* a live feed older than this is stale */
 var FEED_URL = 'https://raw.githubusercontent.com/andycormican-hub/hop/feed/markets.json';
 var _dtf = {};
@@ -518,7 +545,7 @@ function money(n){ return Math.round(n).toLocaleString('en-US'); }
 
 function isRegular(ms){
   var p = parts(ms, NY), mins = p.h*60 + p.mi;
-  return p.wd >= 1 && p.wd <= 5 && mins >= OPEN_MIN && mins < CLOSE_MIN;
+  return p.wd >= 1 && p.wd <= 5 && mins >= OPEN_MIN && mins < CLOSE_MIN - CLOSE_BUF_MIN;
 }
 function nextOpenAfter(ms){
   var p = parts(ms, NY);
@@ -537,7 +564,7 @@ function lastWindowAtOrBefore(ms){
   for (var k = 0; k < 10; k++) {
     var day = dayShift(p.y, p.m, p.d, -k);
     if (day.wd >= 1 && day.wd <= 5) {
-      var close = nyToMs(day.y, day.m, day.d, 16, 0);
+      var close = nyToMs(day.y, day.m, day.d, 16, 0) - CLOSE_BUF_MIN * 60000;
       if (close <= ms) return close;
     }
   }
