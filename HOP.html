@@ -487,7 +487,14 @@
           <tr><td class="mono">21:02:13</td><td class="num">0</td><td class="num">0</td><td class="num">320 / 122</td></tr>
         </tbody>
       </table>
-      <p class="note">Paused carries the reason MARKET_PAUSED. Why it is paused is not stated by the feed. The feed left regular about a minute before 16:00 New York, so HOP treats the last 2 minutes of the session as closed.</p>
+      <table>
+        <thead><tr><th>Weekend, New York time</th><th>Regular</th><th>Offhours (trading)</th><th>Closed (market closed)</th><th>No status</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Sun 11 Oct 19:07</td><td class="num">0</td><td class="num">31</td><td class="num">411</td><td class="num">46</td></tr>
+          <tr><td class="mono">Sun 18 Oct 17:16</td><td class="num">0</td><td class="num">32</td><td class="num">410</td><td class="num">46</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Paused carries the reason MARKET_PAUSED. Why it is paused is not stated by the feed. The feed left regular about a minute before 16:00 New York, so HOP treats the last 2 minutes of the session as closed. On two Sunday evenings nothing read regular: about 410 tokens were closed and about 32 were in off-hours trading, and HOP refuses both.</p>
     </div>
   </section>
 

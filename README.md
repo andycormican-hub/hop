@@ -60,6 +60,14 @@ API keys and tokens live in a private file on the machine running the script (`~
 | 21:01:42 | 0 | 84 | 290 / 68 | 46 |
 | 21:02:13 | 0 | 0 | 320 / 122 | 46 |
 
+- **Weekend, two Sundays (New York time):**
+
+| Time | Regular | Offhours (trading) | Closed (market closed) | No status |
+|---|---|---|---|---|
+| Sun 11 Oct 19:07 | 0 | 31 | 411 | 46 |
+| Sun 18 Oct 17:16 | 0 | 32 | 410 | 46 |
+
+- On both Sundays nothing read `regular`. About 410 tokens were `closed` (reason `MARKET_CLOSED`) and about 32 were `offhours` (reason `TRADING`). The no-status 46 did not change. HOP refuses all of them. One call each, so treat it as a check, not a pattern.
 - The close mirrors the open. `paused` (reason `MARKET_PAUSED`) brackets the regular session at both ends, and tokens change state at slightly different times over a few minutes, so the feed is briefly mixed. The feed does not say why a market is paused.
 - The feed left `regular` about a minute before 16:00 New York, so HOP treats the last 2 minutes of the session as closed. This is one session, so the buffer is a cautious guess, not a measured rule.
 - The HOP page followed the feed: after the close it read 442 postmarket, 46 unknown, and refused every token.
