@@ -322,6 +322,23 @@
     color:var(--muted);
     text-align:center;
   }
+
+  /* ladder */
+  .conf{ font-family:var(--mono); font-size:11px; padding:1px 6px; border:1px solid var(--line); color:var(--muted); margin-left:8px; white-space:nowrap; }
+  .conf.hi{ color:var(--ok); border-color:var(--ok); }
+  .conf.med{ color:var(--queued); border-color:var(--queued); }
+  .conf.asm{ color:var(--blocked); border-color:var(--blocked); }
+  .lrules{ list-style:none; margin:0; padding:0; font-size:14px; }
+  .lrules li{ padding:8px 0; border-bottom:1px solid var(--line); }
+  .lrules li:last-child{ border-bottom:0; }
+  .tblwrap{ overflow-x:auto; }
+  .f textarea{ width:100%; font-family:var(--mono); font-size:13px; color:var(--text); background:var(--panel); border:1px solid var(--line); padding:7px 9px; border-radius:2px; resize:vertical; }
+  .f textarea:focus{ outline:2px solid var(--accent); }
+  .f .hint{ font-size:12px; color:var(--muted); margin-top:4px; }
+  .lwarn{ font-size:13px; color:var(--blocked); background:var(--blocked-bg); padding:8px 12px; margin:0 0 12px; }
+  .ltbl td, .ltbl th{ white-space:normal; }
+  .ltbl td.amt{ font-family:var(--mono); font-size:13px; text-align:right; white-space:nowrap; }
+  .ltbl th.amt{ text-align:right; }
 </style>
 </head>
 <body>
@@ -338,6 +355,7 @@
   <nav>
     <button id="nav-policy" class="active" onclick="showScreen('policy')">Policy</button>
     <button id="nav-preview" onclick="showScreen('preview')">Preview</button>
+    <button id="nav-ladder" onclick="showScreen('ladder')">Ladder</button>
     <button id="nav-ledger" onclick="showScreen('ledger')">Ledger</button>
     <button id="nav-markets" onclick="showScreen('markets')">Markets</button>
   </nav>
@@ -363,7 +381,7 @@
       </div>
     </div>
 
-    <p class="note">Model: redemption windows are the regular US session, Monday to Friday, 09:30 to 16:00 New York, with the last 2 minutes held back because the live feed left regular about a minute before 16:00 on 14 Oct. Market holidays and issuer cut-offs are not modeled. Demo only.</p>
+    <p class="note">Model: redemption windows are the regular US session, Monday to Friday, 09:30 to 16:00 New York, with the last 2 minutes held back because the live feed left regular about a minute before 16:00 on 14 Oct. Market holidays and issuer cut-offs are not modeled here; the Ladder tab models BUIDL’s. Demo only.</p>
   </section>
 
   <!-- PREVIEW -->
@@ -496,6 +514,84 @@
       </table>
       <p class="note">Paused carries the reason MARKET_PAUSED. Why it is paused is not stated by the feed. The feed left regular about a minute before 16:00 New York, so HOP treats the last 2 minutes of the session as closed. On two Sunday evenings nothing read regular: about 410 tokens were closed and about 32 were in off-hours trading, and HOP refuses both.</p>
     </div>
+  </section>
+
+  <!-- LADDER -->
+  <section id="screen-ladder" class="screen">
+    <div class="cols">
+
+      <div>
+        <p class="label">Position (typed in)</p>
+        <div class="panel">
+          <div class="f">
+            <label for="l-sleeve">Sleeve</label>
+            <select id="l-sleeve"><option value="buidl">BUIDL on Ethereum</option></select>
+          </div>
+          <div class="f">
+            <label for="l-asof">As of (New York time)</label>
+            <input id="l-asof" type="datetime-local">
+            <select id="l-jump" style="margin-top:6px; font-size:13px;">
+              <option value="">Jump to a test time...</option>
+              <option value="now">Now</option>
+              <option value="mon">Next Monday 10:00</option>
+              <option value="thu">Next Thursday 14:50 (inside the safety margin)</option>
+              <option value="fri">Next Friday 16:30 (after the cut-off)</option>
+              <option value="sat">Next Saturday 11:00</option>
+            </select>
+          </div>
+          <div class="f">
+            <label for="l-spend">Spendable USDC now</label>
+            <input id="l-spend" type="number" value="120000" min="0" step="1000">
+          </div>
+          <div class="f">
+            <label for="l-held">BUIDL held (USD value)</label>
+            <input id="l-held" type="number" value="1000000" min="0" step="10000">
+          </div>
+          <div class="f">
+            <label for="l-want">Amount to pull back from BUIDL (USD)</label>
+            <input id="l-want" type="number" value="400000" min="0" step="10000">
+          </div>
+          <div class="f">
+            <label for="l-due">Payment due (optional, New York time)</label>
+            <input id="l-due" type="datetime-local">
+          </div>
+          <div class="f">
+            <label for="l-onboard">Fund is onboarded and whitelisted with Securitize</label>
+            <select id="l-onboard"><option value="yes">Yes</option><option value="no">No</option></select>
+          </div>
+        </div>
+
+        <p class="label">HOP assumptions (edit)</p>
+        <div class="panel">
+          <div class="f">
+            <label for="l-final">Minutes for tokens to count as final</label>
+            <input id="l-final" type="number" value="15" min="0" step="1">
+            <div class="hint">Ethereum finalises in about 13 minutes. Securitize's own number is not published.</div>
+          </div>
+          <div class="f">
+            <label for="l-lag">Hours from cut-off until wire arrives</label>
+            <input id="l-lag" type="number" value="2" min="0" step="0.5">
+            <div class="hint">Not published. Treat as a guess and replace it once a holder tells you.</div>
+          </div>
+          <div class="f">
+            <label for="l-hol">Days treated as holidays (YYYY-MM-DD)</label>
+            <textarea id="l-hol" rows="3">2026-11-11, 2026-11-26, 2026-12-25, 2027-01-01, 2027-01-18, 2027-02-15</textarea>
+            <div class="hint">US bank holidays I assumed. BUIDL's definition of a business day is not confirmed.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div id="l-sum" class="verdict" aria-live="polite"></div>
+        <p class="label">Cash ladder, New York time</p>
+        <div class="panel"><div class="tblwrap" id="l-table"></div></div>
+        <p class="label">Rules in use</p>
+        <div class="panel" id="l-rules"></div>
+        <button class="btn" onclick="ladderReport()">Download report</button>
+      </div>
+
+    </div>
+    <p class="note" style="margin-top:20px">Ladder v0.1. BUIDL on Ethereum only. Figures are typed in, there is no wallet connection and nothing is read from the chain. Rules come from public pages checked on 19 Oct 2026 and are mostly one 2025 source, so each carries a confidence tag. The USDC off-ramp is shown as possible, never counted as certain cash. Demo only.</p>
   </section>
 
   <footer>Demo only. Does not move client funds. Not an offer of securities.</footer>
@@ -804,7 +900,7 @@ function num(id){ var v = parseFloat($(id).value); return isFinite(v) ? v : NaN;
 function currentScenario(){ var l = scenarios(); return l[$('v-scn').selectedIndex] || l[0]; }
 
 function showScreen(name){
-  var screens = ['policy','preview','ledger','markets'];
+  var screens = ['policy','preview','ladder','ledger','markets'];
   for (var i = 0; i < screens.length; i++) {
     $('screen-' + screens[i]).classList.remove('active');
     $('nav-' + screens[i]).classList.remove('active');
@@ -985,6 +1081,208 @@ function recordDecision(){
   loadFeed();
   setInterval(loadFeed, 60000);
   setInterval(render, 30000);
+})();
+</script>
+<script>
+/* ==== LADDER v0.1 ====
+   Time-to-cash for one sleeve. Manual inputs only. Reuses the New York clock helpers above.
+   Rules come from HOP_BUIDL_rules.xlsx (checked 19 Oct 2026). */
+var SLEEVES = {
+  buidl: {
+    name: 'BUIDL on Ethereum',
+    usd: { startH: 8, startM: 0, cutH: 15, cutM: 0, minUsd: 250000 },
+    rules: [
+      { t: 'USD redemptions run on business days only.', conf: 'Medium', c: 'med', src: 'Securitize submission, Mar 2025. "Business day" is not defined there.' },
+      { t: 'Tokens must be received and final between 08:00 and 15:00 New York to be paid that day. Later requests wait for the next business day.', conf: 'Medium', c: 'med', src: 'Securitize submission, Mar 2025; rwa.xyz.' },
+      { t: 'Minimum redemption $250,000, unless redeeming everything.', conf: 'High', c: 'hi', src: 'Securitize submission and rwa.xyz agree.' },
+      { t: 'Payout is a USD wire to the fund’s own bank account, not USDC.', conf: 'Medium', c: 'med', src: 'Securitize submission, Mar 2025.' },
+      { t: 'Weekends and after the cut-off: only the Circle USDC off-ramp could help. It is described as 24/7 but at Circle’s discretion and not guaranteed, so HOP shows it as possible and never counts it.', conf: 'Medium', c: 'med', src: 'Securitize submission; Circle release, Apr 2024.' },
+      { t: 'Only onboarded, whitelisted holders can redeem.', conf: 'High', c: 'hi', src: 'Securitize submission; Securitize release, Jul 2026.' }
+    ]
+  }
+};
+
+function lad$(id){ return document.getElementById(id); }
+function lnum(id){ var v = parseFloat(lad$(id).value); return isFinite(v) ? v : NaN; }
+function ldt(str){
+  var m = (str || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  return m ? nyToMs(+m[1], +m[2], +m[3], +m[4], +m[5]) : NaN;
+}
+function ldtStr(ms){
+  var p = parts(ms, NY);
+  return p.y + '-' + pad(p.m) + '-' + pad(p.d) + 'T' + pad(p.h) + ':' + pad(p.mi);
+}
+function ladderRead(){
+  var hol = {}, toks = (lad$('l-hol').value || '').split(/[\s,;]+/), i;
+  for (i = 0; i < toks.length; i++) if (/^\d{4}-\d{2}-\d{2}$/.test(toks[i])) hol[toks[i]] = true;
+  return {
+    sleeve: SLEEVES[lad$('l-sleeve').value],
+    asOf: ldt(lad$('l-asof').value),
+    spend: lnum('l-spend'), held: lnum('l-held'), want: lnum('l-want'),
+    due: ldt(lad$('l-due').value),
+    onboarded: lad$('l-onboard').value === 'yes',
+    finalMin: isFinite(lnum('l-final')) ? Math.max(0, lnum('l-final')) : 0,
+    lagH: isFinite(lnum('l-lag')) ? Math.max(0, lnum('l-lag')) : 0,
+    hol: hol
+  };
+}
+function isBizDay(d, hol){
+  return d.wd >= 1 && d.wd <= 5 && !hol[d.y + '-' + pad(d.m) + '-' + pad(d.d)];
+}
+/* First business day on which tokens sent now (or at the window start) are final before the cut-off. */
+function earliestUsd(inp){
+  var u = inp.sleeve.usd, p = parts(inp.asOf, NY), k, notes = [];
+  for (k = 0; k < 20; k++) {
+    var d = dayShift(p.y, p.m, p.d, k);
+    if (!isBizDay(d, inp.hol)) { if (k === 0) notes.push('Today is not a business day.'); continue; }
+    var cut = nyToMs(d.y, d.m, d.d, u.cutH, u.cutM), start = nyToMs(d.y, d.m, d.d, u.startH, u.startM);
+    var req = k === 0 ? Math.max(inp.asOf, start) : start;
+    var fin = req + inp.finalMin * 60000;
+    if (fin <= cut) {
+      return { cutMs: cut, sendBy: cut - inp.finalMin * 60000, cashAt: cut + inp.lagH * 3600000, daysAhead: k, notes: notes };
+    }
+    if (k === 0) notes.push('Too late today: tokens sent now would not be final before the cut-off.');
+  }
+  return null;
+}
+function afterWeekendMs(asOf){
+  var p = parts(asOf, NY), add = p.wd === 1 ? 7 : (8 - p.wd) % 7, d = dayShift(p.y, p.m, p.d, add);
+  return nyToMs(d.y, d.m, d.d, 9, 0);
+}
+function ladderCompute(inp){
+  var u = inp.sleeve.usd, out = { warn: [], rows: [], inp: inp };
+  var held = isFinite(inp.held) ? Math.max(inp.held, 0) : 0;
+  var want = isFinite(inp.want) ? Math.max(inp.want, 0) : 0;
+  var spend = isFinite(inp.spend) ? Math.max(inp.spend, 0) : 0;
+  if (want > held) { out.warn.push('You asked to pull back ' + money(want) + ' but hold ' + money(held) + '. Using ' + money(held) + '.'); want = held; }
+  out.spend = spend; out.held = held; out.want = want;
+
+  var aAmt = 0, aWhy = '';
+  if (!inp.onboarded) aWhy = 'The fund is not onboarded or whitelisted with Securitize, so BUIDL cannot be redeemed.';
+  else if (want <= 0) aWhy = 'No BUIDL pull-back requested.';
+  else if (want < u.minUsd && want < held) aWhy = 'A pull-back of ' + money(want) + ' is below the ' + money(u.minUsd) + ' minimum and is not a full redemption. USD redemption refused.';
+  else aAmt = want;
+  var bAmt = (inp.onboarded && want > 0) ? want : 0;
+
+  var e = aAmt > 0 ? earliestUsd(inp) : null;
+  out.e = e; out.aAmt = aAmt; out.bAmt = bAmt; out.aWhy = aWhy;
+  if (e && e.notes.length) out.warn = out.warn.concat(e.notes);
+
+  var hs = [
+    { label: '+1 hour', ms: inp.asOf + 3600000 },
+    { label: '+24 hours', ms: inp.asOf + 24 * 3600000 },
+    { label: 'Next Monday 09:00 (after the weekend)', ms: afterWeekendMs(inp.asOf) }
+  ];
+  if (isFinite(inp.due)) hs.push({ label: 'Your payment due', ms: inp.due });
+  for (var i = 0; i < hs.length; i++) {
+    var ms = hs[i].ms, aOk = !!(e && aAmt > 0 && e.cashAt <= ms);
+    var certain = spend + (aOk ? aAmt : 0);
+    var possible = (!aOk && bAmt > 0) ? bAmt : 0;
+    var v, why;
+    if (want <= 0 && inp.onboarded) { v = 'Spendable only'; why = 'No BUIDL pull-back requested.'; }
+    else if (aOk) { v = 'Reachable'; why = 'USD wire from BUIDL expected ' + fmt(e.cashAt, NY) + ' NY.'; }
+    else if (possible > 0) {
+      v = 'Conditional';
+      why = (e ? 'USD wire not before ' + fmt(e.cashAt, NY) + ' NY. ' : aWhy + ' ') + 'Only the Circle USDC off-ramp could ' + (e ? 'be faster' : 'help') + ', and it is not guaranteed.';
+    } else { v = 'Not reachable'; why = aWhy || 'No route found.'; }
+    out.rows.push({ label: hs[i].label, ms: ms, certain: certain, possible: possible, verdict: v, why: why });
+  }
+  return out;
+}
+
+var lastLadder = null;
+function ladderRender(){
+  var inp = ladderRead(), sum = lad$('l-sum'), tbl = lad$('l-table');
+  lad$('l-rules').innerHTML = '<ul class="lrules">' + inp.sleeve.rules.map(function(r){
+    return '<li>' + esc(r.t) + '<span class="conf ' + r.c + '">' + esc(r.conf) + '</span><span class="why-s">' + esc(r.src) + '</span></li>';
+  }).join('') + '<li>HOP assumptions, not from any source: ' + inp.finalMin + ' min until tokens count as final, ' + inp.lagH + ' h from cut-off to wire arrival, and the holiday list in the box.<span class="conf asm">Assumption</span></li></ul>';
+  if (!isFinite(inp.asOf)) {
+    sum.className = 'verdict v-refuse';
+    sum.innerHTML = '<div class="word">NO TIME SET</div><p class="why">Enter an “As of” time.</p>';
+    tbl.innerHTML = ''; lastLadder = null; return;
+  }
+  var r = ladderCompute(inp); lastLadder = r;
+  var key = isFinite(inp.due) ? r.rows[r.rows.length - 1] : r.rows[1];
+  var cls = key.verdict === 'Reachable' || key.verdict === 'Spendable only' ? 'v-allow' : key.verdict === 'Conditional' ? 'v-queue' : 'v-refuse';
+  var h = '<div class="top"><span>AS OF: <b>' + esc(fmt(inp.asOf, NY)) + ' NY</b></span><span>CHECKED: <b>' + esc(key.label.toUpperCase()) + '</b></span></div>';
+  h += '<div class="word">' + esc(key.verdict.toUpperCase()) + '</div>';
+  h += '<p class="why">' + esc(key.why) + '</p>';
+  if (r.e) h += '<p class="after">EARLIEST USD CASH FROM BUIDL: ' + esc(fmt(r.e.cashAt, NY)) + ' NY · SEND TOKENS BY ' + esc(fmt(r.e.sendBy, NY)) + ' NY</p>';
+  sum.className = 'verdict ' + cls; sum.innerHTML = h;
+
+  var t = '';
+  for (var i = 0; i < r.warn.length; i++) t += '<p class="lwarn">' + esc(r.warn[i]) + '</p>';
+  t += '<table class="ltbl"><thead><tr><th>When</th><th>Time (NY)</th><th class="amt">Certain cash (USD)</th><th class="amt">Possible extra (USD)</th><th>Result</th></tr></thead><tbody>';
+  for (i = 0; i < r.rows.length; i++) {
+    var x = r.rows[i], rc = x.verdict === 'Reachable' || x.verdict === 'Spendable only' ? 'nav' : x.verdict === 'Conditional' ? 'queued' : 'refused';
+    t += '<tr><td>' + esc(x.label) + '</td><td class="mono">' + esc(fmt(x.ms, NY)) + '</td><td class="amt">' + money(x.certain) + '</td><td class="amt">' + (x.possible ? money(x.possible) : '—') +
+      '</td><td><span class="result ' + rc + '">' + esc(x.verdict) + '</span><span class="why-s">' + esc(x.why) + '</span></td></tr>';
+  }
+  t += '</tbody></table>';
+  tbl.innerHTML = t;
+}
+
+function ladderPreset(v){
+  if (!v) return;
+  var now = Date.now(), ms = now;
+  if (v !== 'now') {
+    var T = { mon: [1, 10, 0], thu: [4, 14, 50], fri: [5, 16, 30], sat: [6, 11, 0] }[v], p = parts(now, NY);
+    for (var k = 0; k < 8; k++) {
+      var d = dayShift(p.y, p.m, p.d, k);
+      if (d.wd === T[0]) { var c = nyToMs(d.y, d.m, d.d, T[1], T[2]); if (c > now) { ms = c; break; } }
+    }
+  }
+  lad$('l-asof').value = ldtStr(ms);
+  lad$('l-jump').value = '';
+  ladderRender();
+}
+
+function ladderReport(){
+  if (!lastLadder) return;
+  var r = lastLadder, inp = r.inp, now = Date.now();
+  var h = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>HOP cash ladder</title><style>' +
+    'body{font-family:Arial,Helvetica,sans-serif;max-width:820px;margin:32px auto;padding:0 20px;color:#1f2420;font-size:14px;line-height:1.45}' +
+    'h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:26px 0 8px;border-bottom:1px solid #dedad2;padding-bottom:4px}' +
+    'table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid #dedad2;vertical-align:top}' +
+    'td.a,th.a{text-align:right}.m{color:#5b6560;font-size:12px}.f{margin-top:32px;font-size:12px;color:#5b6560;border-top:1px solid #dedad2;padding-top:10px}</style></head><body>';
+  h += '<h1>HOP cash ladder</h1><div class="m">' + esc(r.inp.sleeve.name) + ' · generated ' + esc(fmt(now, NY)) + ' New York / ' + esc(fmt(now, DUB)) + ' Dublin · ladder v0.1</div>';
+  h += '<h2>Inputs (typed in, not read from a wallet)</h2><table><tbody>' +
+    '<tr><td>As of</td><td>' + esc(fmt(inp.asOf, NY)) + ' NY</td></tr>' +
+    '<tr><td>Spendable USDC</td><td>' + money(r.spend) + '</td></tr>' +
+    '<tr><td>BUIDL held (USD value)</td><td>' + money(r.held) + '</td></tr>' +
+    '<tr><td>Amount to pull back</td><td>' + money(r.want) + '</td></tr>' +
+    '<tr><td>Onboarded and whitelisted</td><td>' + (inp.onboarded ? 'Yes' : 'No') + '</td></tr>' +
+    (isFinite(inp.due) ? '<tr><td>Payment due</td><td>' + esc(fmt(inp.due, NY)) + ' NY</td></tr>' : '') + '</tbody></table>';
+  h += '<h2>Cash ladder</h2>';
+  for (var i = 0; i < r.warn.length; i++) h += '<p class="m">Note: ' + esc(r.warn[i]) + '</p>';
+  h += '<table><thead><tr><th>When</th><th>Time (NY)</th><th class="a">Certain cash</th><th class="a">Possible extra</th><th>Result</th></tr></thead><tbody>';
+  for (i = 0; i < r.rows.length; i++) {
+    var x = r.rows[i];
+    h += '<tr><td>' + esc(x.label) + '</td><td>' + esc(fmt(x.ms, NY)) + '</td><td class="a">' + money(x.certain) + '</td><td class="a">' + (x.possible ? money(x.possible) : '-') +
+      '</td><td><b>' + esc(x.verdict) + '</b><br><span class="m">' + esc(x.why) + '</span></td></tr>';
+  }
+  h += '</tbody></table>';
+  if (r.e) h += '<p>Earliest USD cash from BUIDL: <b>' + esc(fmt(r.e.cashAt, NY)) + ' NY</b>. Send tokens by <b>' + esc(fmt(r.e.sendBy, NY)) + ' NY</b>.</p>';
+  h += '<h2>Rules used</h2><ol>';
+  inp.sleeve.rules.forEach(function(q){ h += '<li>' + esc(q.t) + ' <span class="m">[' + esc(q.conf) + '; ' + esc(q.src) + ']</span></li>'; });
+  h += '</ol><h2>HOP assumptions (not from any source)</h2><ul><li>' + inp.finalMin + ' minutes until tokens count as final.</li><li>' + inp.lagH + ' hours from cut-off until the wire arrives.</li><li>Holidays: ' + esc(Object.keys(inp.hol).sort().join(', ') || 'none') + '.</li></ul>';
+  h += '<p class="m">Rules read from public pages on 19 Oct 2026; mostly one 2025 Securitize document. Not confirmed against the fund’s offering document. Not legal or investment advice.</p>';
+  h += '<div class="f">Demo only. Does not move client funds. Not an offer of securities.</div></body></html>';
+  var a = document.createElement('a'), p = parts(now, NY);
+  a.href = URL.createObjectURL(new Blob([h], { type: 'text/html' }));
+  a.download = 'HOP-ladder-' + p.y + pad(p.m) + pad(p.d) + '-' + pad(p.h) + pad(p.mi) + '.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+(function ladderInit(){
+  lad$('l-asof').value = ldtStr(Date.now());
+  var ids = ['l-sleeve','l-asof','l-spend','l-held','l-want','l-due','l-onboard','l-final','l-lag','l-hol'];
+  for (var i = 0; i < ids.length; i++) {
+    lad$(ids[i]).addEventListener('input', ladderRender);
+    lad$(ids[i]).addEventListener('change', ladderRender);
+  }
+  lad$('l-jump').addEventListener('change', function(){ ladderPreset(this.value); });
+  ladderRender();
 })();
 </script>
 </body>
