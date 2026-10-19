@@ -539,7 +539,7 @@
         <div class="panel">
           <div class="f">
             <label for="l-sleeve">Sleeve</label>
-            <select id="l-sleeve"><option value="buidl">BUIDL on Ethereum</option></select>
+            <select id="l-sleeve"><option value="buidl">BUIDL on Ethereum</option><option value="jtrsy">JTRSY on Ethereum</option></select>
           </div>
           <div class="f">
             <label for="l-asof">As of (New York time)</label>
@@ -558,11 +558,11 @@
             <input id="l-spend" type="number" value="120000" min="0" step="1000">
           </div>
           <div class="f">
-            <label for="l-held">BUIDL held (USD value)</label>
+            <label for="l-held" id="l-held-lbl">BUIDL held (USD value)</label>
             <input id="l-held" type="number" value="1000000" min="0" step="10000">
           </div>
           <div class="f">
-            <label for="l-want">Amount to pull back from BUIDL (USD)</label>
+            <label for="l-want" id="l-want-lbl">Amount to pull back from BUIDL (USD)</label>
             <input id="l-want" type="number" value="400000" min="0" step="10000">
           </div>
           <div class="f">
@@ -570,7 +570,7 @@
             <input id="l-due" type="datetime-local">
           </div>
           <div class="f">
-            <label for="l-onboard">Fund is onboarded and whitelisted with Securitize</label>
+            <label for="l-onboard" id="l-onboard-lbl">Fund is onboarded and whitelisted with Securitize</label>
             <select id="l-onboard"><option value="yes">Yes</option><option value="no">No</option></select>
           </div>
         </div>
@@ -606,7 +606,7 @@
       </div>
 
     </div>
-    <p class="note" style="margin-top:20px">Ladder v0.2. BUIDL on Ethereum only. Figures are typed in, or read from a public Ethereum address if you paste one. There is no wallet connection and nothing is signed. Rules come from public pages checked on 19 Oct 2026 and are mostly one 2025 source, so each carries a confidence tag. The USDC off-ramp is shown as possible, never counted as certain cash. Demo only.</p>
+    <p class="note" style="margin-top:20px">Ladder v0.3. BUIDL and JTRSY on Ethereum. Figures are typed in, or read from a public Ethereum address if you paste one. There is no wallet connection and nothing is signed. Rules come from public pages checked on 19 and 20 Oct 2026, mostly 2025 and 2026 issuer and partner documents, so each carries a confidence tag. Instant exit routes are shown as possible, never counted as certain cash. Demo only.</p>
   </section>
 
   <footer>Demo only. Does not move client funds. Not an offer of securities.</footer>
@@ -1099,13 +1099,20 @@ function recordDecision(){
 })();
 </script>
 <script>
-/* ==== LADDER v0.1 ====
-   Time-to-cash for one sleeve. Manual inputs only. Reuses the New York clock helpers above.
-   Rules come from HOP_BUIDL_rules.xlsx (checked 19 Oct 2026). */
+/* ==== LADDER v0.3 ====
+   Time-to-cash for one sleeve at a time (BUIDL, JTRSY). Reuses the New York clock helpers above.
+   Rules come from HOP_BUIDL_rules.xlsx and HOP_JTRSY_rules.xlsx (checked 19-20 Oct 2026).
+   model 'cutoff': tokens must be final before a daily cut-off on a business day (BUIDL).
+   model 'tplus1': request any time onchain, executed the next US banking day (JTRSY). */
 var SLEEVES = {
   buidl: {
-    name: 'BUIDL on Ethereum',
+    key: 'buidl', name: 'BUIDL on Ethereum', short: 'BUIDL', model: 'cutoff', syms: ['BUIDL', 'BUIDL-I'],
+    heldLabel: 'BUIDL held (USD value)', wantLabel: 'Amount to pull back from BUIDL (USD)',
+    onboardLabel: 'Fund is onboarded and whitelisted with Securitize',
+    notOnboard: 'The fund is not onboarded or whitelisted with Securitize, so BUIDL cannot be redeemed.',
+    offRamp: 'the Circle USDC off-ramp', ng: 'it is not guaranteed',
     usd: { startH: 8, startM: 0, cutH: 15, cutM: 0, minUsd: 250000 },
+    sourceNote: 'Rules read from public pages on 19 Oct 2026; mostly one 2025 Securitize document. Not confirmed against the fund’s offering document.',
     rules: [
       { t: 'USD redemptions run on business days only.', conf: 'Medium', c: 'med', src: 'Securitize submission, Mar 2025. "Business day" is not defined there.' },
       { t: 'Tokens must be received and final between 08:00 and 15:00 New York to be paid that day. Later requests wait for the next business day.', conf: 'Medium', c: 'med', src: 'Securitize submission, Mar 2025; rwa.xyz.' },
@@ -1113,7 +1120,27 @@ var SLEEVES = {
       { t: 'Payout is a USD wire to the fund’s own bank account, not USDC.', conf: 'Medium', c: 'med', src: 'Securitize submission, Mar 2025.' },
       { t: 'Weekends and after the cut-off: only the Circle USDC off-ramp could help. It is described as 24/7 but at Circle’s discretion and not guaranteed, so HOP shows it as possible and never counts it.', conf: 'Medium', c: 'med', src: 'Securitize submission; Circle release, Apr 2024.' },
       { t: 'Only onboarded, whitelisted holders can redeem.', conf: 'High', c: 'hi', src: 'Securitize submission; Securitize release, Jul 2026.' }
-    ]
+    ],
+    assumptions: function(inp){ return inp.finalMin + ' min until tokens count as final, ' + inp.lagH + ' h from cut-off to wire arrival, and the holiday list in the box.'; }
+  },
+  jtrsy: {
+    key: 'jtrsy', name: 'JTRSY on Ethereum', short: 'JTRSY', model: 'tplus1', syms: ['JTRSY'],
+    heldLabel: 'JTRSY held (USD value)', wantLabel: 'Amount to pull back from JTRSY (USD)',
+    onboardLabel: 'Fund is whitelisted with the fund administrator',
+    notOnboard: 'The fund is not whitelisted with the fund administrator, so JTRSY cannot be redeemed.',
+    offRamp: 'the Grove Basin or Symbiotic instant routes', ng: 'neither is guaranteed',
+    t1: { cashH: 17, cashM: 0 }, minUsd: 0,
+    sourceNote: 'Rules read from public pages on 20 Oct 2026: a March 2025 issuer submission, a May 2026 Centrifuge post, an Aug 2026 Symbiotic release and rwa.xyz. Not confirmed against the fund’s offering document.',
+    rules: [
+      { t: 'Redemptions can be requested onchain around the clock and are executed on the next US banking day (standard T+1).', conf: 'Medium', c: 'med', src: 'Anemoy/Centrifuge submission, Mar 2025; rwa.xyz.' },
+      { t: 'The fund sets no redemption cut-off of its own. Only US wire and market cut-offs apply. JTRSY-specific cut-off times are not stated.', conf: 'Low', c: 'asm', src: 'Anemoy text, 2024 (older fund); not restated for JTRSY.' },
+      { t: 'No redemption minimum. The minimum subscription is 500,000 USDC.', conf: 'Medium', c: 'med', src: 'rwa.xyz; Anemoy/Centrifuge submission, Mar 2025.' },
+      { t: 'Payout is USDC to the holder’s wallet.', conf: 'Medium', c: 'med', src: 'Anemoy text, 2024; may have changed.' },
+      { t: 'Instant route 1: Grove Basin offers up to $1 billion of committed daily liquidity to redeem JTRSY into USDC, described as 24/7. Fees, per-holder limits and who qualifies are not stated, so HOP shows it as possible and never counts it.', conf: 'Low', c: 'asm', src: 'Centrifuge blog, 28 May 2026.' },
+      { t: 'Instant route 2: Symbiotic Liquid Lane. Qualified market makers quote an exit at a discount and settle in USDC in one transaction. Eligible holders only; size, hours and fees are not stated.', conf: 'Low', c: 'asm', src: 'Symbiotic release, 19 Aug 2026 (promotional).' },
+      { t: 'Only non-US professional investors, whitelisted through KYC with the fund administrator, can hold JTRSY. Tokens move only between whitelisted wallets.', conf: 'Medium', c: 'med', src: 'Anemoy/Centrifuge submission, Mar 2025 and Jun 2024 Q&A.' }
+    ],
+    assumptions: function(inp){ return 'cash assumed at 17:00 New York on the execution day, the next US banking day after the request, using the holiday list in the box. No cut-off is applied because none is published for JTRSY.'; }
   }
 };
 
@@ -1144,7 +1171,7 @@ function ladderRead(){
 function isBizDay(d, hol){
   return d.wd >= 1 && d.wd <= 5 && !hol[d.y + '-' + pad(d.m) + '-' + pad(d.d)];
 }
-/* First business day on which tokens sent now (or at the window start) are final before the cut-off. */
+/* model 'cutoff': first business day on which tokens sent now (or at the window start) are final before the cut-off. */
 function earliestUsd(inp){
   var u = inp.sleeve.usd, p = parts(inp.asOf, NY), k, notes = [];
   for (k = 0; k < 20; k++) {
@@ -1160,29 +1187,41 @@ function earliestUsd(inp){
   }
   return null;
 }
+/* model 'tplus1': request any time; executed the next US banking day after the request date. */
+function earliestT1(inp){
+  var t = inp.sleeve.t1, p = parts(inp.asOf, NY), k, notes = [];
+  for (k = 1; k < 20; k++) {
+    var d = dayShift(p.y, p.m, p.d, k);
+    if (!isBizDay(d, inp.hol)) continue;
+    return { cutMs: null, sendBy: null, cashAt: nyToMs(d.y, d.m, d.d, t.cashH, t.cashM), daysAhead: k, notes: notes };
+  }
+  return null;
+}
 function afterWeekendMs(asOf){
   var p = parts(asOf, NY), add = p.wd === 1 ? 7 : (8 - p.wd) % 7, d = dayShift(p.y, p.m, p.d, add);
   return nyToMs(d.y, d.m, d.d, 9, 0);
 }
 function ladderCompute(inp){
-  var u = inp.sleeve.usd, out = { warn: [], rows: [], inp: inp };
+  var sl = inp.sleeve, out = { warn: [], rows: [], inp: inp }, cut = sl.model === 'cutoff';
   var held = isFinite(inp.held) ? Math.max(inp.held, 0) : 0;
   var want = isFinite(inp.want) ? Math.max(inp.want, 0) : 0;
   var spend = isFinite(inp.spend) ? Math.max(inp.spend, 0) : 0;
   if (want > held) { out.warn.push('You asked to pull back ' + money(want) + ' but hold ' + money(held) + '. Using ' + money(held) + '.'); want = held; }
   out.spend = spend; out.held = held; out.want = want;
 
+  var minUsd = cut ? sl.usd.minUsd : sl.minUsd;
   var aAmt = 0, aWhy = '';
-  if (!inp.onboarded) aWhy = 'The fund is not onboarded or whitelisted with Securitize, so BUIDL cannot be redeemed.';
-  else if (want <= 0) aWhy = 'No BUIDL pull-back requested.';
-  else if (want < u.minUsd && want < held) aWhy = 'A pull-back of ' + money(want) + ' is below the ' + money(u.minUsd) + ' minimum and is not a full redemption. USD redemption refused.';
+  if (!inp.onboarded) aWhy = sl.notOnboard;
+  else if (want <= 0) aWhy = 'No ' + sl.short + ' pull-back requested.';
+  else if (minUsd > 0 && want < minUsd && want < held) aWhy = 'A pull-back of ' + money(want) + ' is below the ' + money(minUsd) + ' minimum and is not a full redemption. USD redemption refused.';
   else aAmt = want;
   var bAmt = (inp.onboarded && want > 0) ? want : 0;
 
-  var e = aAmt > 0 ? earliestUsd(inp) : null;
+  var e = aAmt > 0 ? (cut ? earliestUsd(inp) : earliestT1(inp)) : null;
   out.e = e; out.aAmt = aAmt; out.bAmt = bAmt; out.aWhy = aWhy;
   if (e && e.notes.length) out.warn = out.warn.concat(e.notes);
 
+  var routeA = cut ? 'USD wire' : 'Standard redemption';
   var hs = [
     { label: '+1 hour', ms: inp.asOf + 3600000 },
     { label: '+24 hours', ms: inp.asOf + 24 * 3600000 },
@@ -1194,23 +1233,35 @@ function ladderCompute(inp){
     var certain = spend + (aOk ? aAmt : 0);
     var possible = (!aOk && bAmt > 0) ? bAmt : 0;
     var v, why;
-    if (want <= 0 && inp.onboarded) { v = 'Spendable only'; why = 'No BUIDL pull-back requested.'; }
-    else if (aOk) { v = 'Reachable'; why = 'USD wire from BUIDL expected ' + fmt(e.cashAt, NY) + ' NY.'; }
+    if (want <= 0 && inp.onboarded) { v = 'Spendable only'; why = 'No ' + sl.short + ' pull-back requested.'; }
+    else if (aOk) { v = 'Reachable'; why = (cut ? 'USD wire from BUIDL expected ' : 'Standard redemption expected ') + fmt(e.cashAt, NY) + ' NY.'; }
     else if (possible > 0) {
       v = 'Conditional';
-      why = (e ? 'USD wire not before ' + fmt(e.cashAt, NY) + ' NY. ' : aWhy + ' ') + 'Only the Circle USDC off-ramp could ' + (e ? 'be faster' : 'help') + ', and it is not guaranteed.';
+      why = (e ? routeA + ' not before ' + fmt(e.cashAt, NY) + ' NY. ' : aWhy + ' ') + 'Only ' + sl.offRamp + ' could ' + (e ? 'be faster' : 'help') + ', and ' + sl.ng + '.';
     } else { v = 'Not reachable'; why = aWhy || 'No route found.'; }
     out.rows.push({ label: hs[i].label, ms: ms, certain: certain, possible: possible, verdict: v, why: why });
   }
   return out;
 }
 
+function ladderApplySleeve(sl){
+  lad$('l-held-lbl').textContent = sl.heldLabel;
+  lad$('l-want-lbl').textContent = sl.wantLabel;
+  lad$('l-onboard-lbl').textContent = sl.onboardLabel;
+  var show = sl.model === 'cutoff' ? '' : 'none';
+  lad$('l-final').closest('.f').style.display = show;
+  lad$('l-lag').closest('.f').style.display = show;
+  var ub = document.getElementById('a-use');
+  if (ub) ub.textContent = 'Use USDC and ' + sl.short + ' in the ladder';
+}
+
 var lastLadder = null;
 function ladderRender(){
-  var inp = ladderRead(), sum = lad$('l-sum'), tbl = lad$('l-table');
-  lad$('l-rules').innerHTML = '<ul class="lrules">' + inp.sleeve.rules.map(function(r){
+  var inp = ladderRead(), sl = inp.sleeve, sum = lad$('l-sum'), tbl = lad$('l-table');
+  ladderApplySleeve(sl);
+  lad$('l-rules').innerHTML = '<ul class="lrules">' + sl.rules.map(function(r){
     return '<li>' + esc(r.t) + '<span class="conf ' + r.c + '">' + esc(r.conf) + '</span><span class="why-s">' + esc(r.src) + '</span></li>';
-  }).join('') + '<li>HOP assumptions, not from any source: ' + inp.finalMin + ' min until tokens count as final, ' + inp.lagH + ' h from cut-off to wire arrival, and the holiday list in the box.<span class="conf asm">Assumption</span></li></ul>';
+  }).join('') + '<li>HOP assumptions, not from any source: ' + esc(sl.assumptions(inp)) + '<span class="conf asm">Assumption</span></li></ul>';
   if (!isFinite(inp.asOf)) {
     sum.className = 'verdict v-refuse';
     sum.innerHTML = '<div class="word">NO TIME SET</div><p class="why">Enter an “As of” time.</p>';
@@ -1222,7 +1273,11 @@ function ladderRender(){
   var h = '<div class="top"><span>AS OF: <b>' + esc(fmt(inp.asOf, NY)) + ' NY</b></span><span>CHECKED: <b>' + esc(key.label.toUpperCase()) + '</b></span></div>';
   h += '<div class="word">' + esc(key.verdict.toUpperCase()) + '</div>';
   h += '<p class="why">' + esc(key.why) + '</p>';
-  if (r.e) h += '<p class="after">EARLIEST USD CASH FROM BUIDL: ' + esc(fmt(r.e.cashAt, NY)) + ' NY · SEND TOKENS BY ' + esc(fmt(r.e.sendBy, NY)) + ' NY</p>';
+  if (r.e) {
+    h += '<p class="after">' + (sl.model === 'cutoff'
+      ? 'EARLIEST USD CASH FROM BUIDL: ' + esc(fmt(r.e.cashAt, NY)) + ' NY · SEND TOKENS BY ' + esc(fmt(r.e.sendBy, NY)) + ' NY'
+      : 'EARLIEST STANDARD CASH FROM JTRSY: ' + esc(fmt(r.e.cashAt, NY)) + ' NY · REQUEST ANY TIME ONCHAIN') + '</p>';
+  }
   sum.className = 'verdict ' + cls; sum.innerHTML = h;
 
   var t = '';
@@ -1254,21 +1309,21 @@ function ladderPreset(v){
 
 function ladderReport(){
   if (!lastLadder) return;
-  var r = lastLadder, inp = r.inp, now = Date.now();
+  var r = lastLadder, inp = r.inp, sl = inp.sleeve, now = Date.now();
   var h = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>HOP cash ladder</title><style>' +
     'body{font-family:Arial,Helvetica,sans-serif;max-width:820px;margin:32px auto;padding:0 20px;color:#1f2420;font-size:14px;line-height:1.45}' +
     'h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:26px 0 8px;border-bottom:1px solid #dedad2;padding-bottom:4px}' +
     'table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid #dedad2;vertical-align:top}' +
     'td.a,th.a{text-align:right}.m{color:#5b6560;font-size:12px}.f{margin-top:32px;font-size:12px;color:#5b6560;border-top:1px solid #dedad2;padding-top:10px}</style></head><body>';
-  h += '<h1>HOP cash ladder</h1><div class="m">' + esc(r.inp.sleeve.name) + ' · generated ' + esc(fmt(now, NY)) + ' New York / ' + esc(fmt(now, DUB)) + ' Dublin · ladder v0.2</div>';
+  h += '<h1>HOP cash ladder</h1><div class="m">' + esc(sl.name) + ' · generated ' + esc(fmt(now, NY)) + ' New York / ' + esc(fmt(now, DUB)) + ' Dublin · ladder v0.3</div>';
   h += '<h2>Inputs</h2><table><tbody>' +
     '<tr><td>As of</td><td>' + esc(fmt(inp.asOf, NY)) + ' NY</td></tr>' +
     '<tr><td>Spendable USDC</td><td>' + money(r.spend) + '</td></tr>' +
-    '<tr><td>BUIDL held (USD value)</td><td>' + money(r.held) + '</td></tr>' +
+    '<tr><td>' + esc(sl.heldLabel) + '</td><td>' + money(r.held) + '</td></tr>' +
     '<tr><td>Amount to pull back</td><td>' + money(r.want) + '</td></tr>' +
     '<tr><td>Onboarded and whitelisted</td><td>' + (inp.onboarded ? 'Yes' : 'No') + '</td></tr>' +
     (isFinite(inp.due) ? '<tr><td>Payment due</td><td>' + esc(fmt(inp.due, NY)) + ' NY</td></tr>' : '') + '</tbody></table>';
-  h += '<p class="m">' + (aLast && aLast.used ? 'Spendable USDC and BUIDL were read from public Ethereum data for ' + esc(aLast.addr) + ' at block ' + aLast.block.toLocaleString('en-US') + ' via ' + esc(aLast.host) + '. NAV is an editable estimate.' : 'Figures were typed in. No wallet connection and nothing read from the chain.') + '</p>';
+  h += '<p class="m">' + (aLast && aLast.used ? 'Spendable USDC and ' + esc(sl.short) + ' were read from public Ethereum data for ' + esc(aLast.addr) + ' at block ' + aLast.block.toLocaleString('en-US') + ' via ' + esc(aLast.host) + '. NAV is an editable estimate.' : 'Figures were typed in. No wallet connection and nothing read from the chain.') + '</p>';
   h += '<h2>Cash ladder</h2>';
   for (var i = 0; i < r.warn.length; i++) h += '<p class="m">Note: ' + esc(r.warn[i]) + '</p>';
   h += '<table><thead><tr><th>When</th><th>Time (NY)</th><th class="a">Certain cash</th><th class="a">Possible extra</th><th>Result</th></tr></thead><tbody>';
@@ -1278,15 +1333,17 @@ function ladderReport(){
       '</td><td><b>' + esc(x.verdict) + '</b><br><span class="m">' + esc(x.why) + '</span></td></tr>';
   }
   h += '</tbody></table>';
-  if (r.e) h += '<p>Earliest USD cash from BUIDL: <b>' + esc(fmt(r.e.cashAt, NY)) + ' NY</b>. Send tokens by <b>' + esc(fmt(r.e.sendBy, NY)) + ' NY</b>.</p>';
+  if (r.e) h += '<p>' + (sl.model === 'cutoff'
+    ? 'Earliest USD cash from BUIDL: <b>' + esc(fmt(r.e.cashAt, NY)) + ' NY</b>. Send tokens by <b>' + esc(fmt(r.e.sendBy, NY)) + ' NY</b>.'
+    : 'Earliest standard cash from JTRSY: <b>' + esc(fmt(r.e.cashAt, NY)) + ' NY</b>. The request can be made onchain at any time.') + '</p>';
   h += '<h2>Rules used</h2><ol>';
-  inp.sleeve.rules.forEach(function(q){ h += '<li>' + esc(q.t) + ' <span class="m">[' + esc(q.conf) + '; ' + esc(q.src) + ']</span></li>'; });
-  h += '</ol><h2>HOP assumptions (not from any source)</h2><ul><li>' + inp.finalMin + ' minutes until tokens count as final.</li><li>' + inp.lagH + ' hours from cut-off until the wire arrives.</li><li>Holidays: ' + esc(Object.keys(inp.hol).sort().join(', ') || 'none') + '.</li></ul>';
-  h += '<p class="m">Rules read from public pages on 19 Oct 2026; mostly one 2025 Securitize document. Not confirmed against the fund’s offering document. Not legal or investment advice.</p>';
+  sl.rules.forEach(function(q){ h += '<li>' + esc(q.t) + ' <span class="m">[' + esc(q.conf) + '; ' + esc(q.src) + ']</span></li>'; });
+  h += '</ol><h2>HOP assumptions (not from any source)</h2><ul><li>' + esc(sl.assumptions(inp)) + '</li><li>Holidays: ' + esc(Object.keys(inp.hol).sort().join(', ') || 'none') + '.</li></ul>';
+  h += '<p class="m">' + esc(sl.sourceNote) + ' Not legal or investment advice.</p>';
   h += '<div class="f">Demo only. Does not move client funds. Not an offer of securities.</div></body></html>';
   var a = document.createElement('a'), p = parts(now, NY);
   a.href = URL.createObjectURL(new Blob([h], { type: 'text/html' }));
-  a.download = 'HOP-ladder-' + p.y + pad(p.m) + pad(p.d) + '-' + pad(p.h) + pad(p.mi) + '.html';
+  a.download = 'HOP-ladder-' + sl.key + '-' + p.y + pad(p.m) + pad(p.d) + '-' + pad(p.h) + pad(p.mi) + '.html';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
@@ -1309,6 +1366,7 @@ var A_TOKENS = [
   { sym: 'USDC',    addr: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', dec: 6,  nav: 1,     rules: 'cash',    navSrc: 'Cash, $1' },
   { sym: 'BUIDL',   addr: '0x7712c34205737192402172409a8F7ccef8aA2AEc', dec: 6,  nav: 1,     rules: 'ladder',  navSrc: 'Fund targets $1' },
   { sym: 'BUIDL-I', addr: '0x6a9DA2D710BB9B700acde7Cb81F10F1fF8C89041', dec: 6,  nav: 1,     rules: 'assumed', navSrc: 'Fund targets $1' },
+  { sym: 'JTRSY',   addr: '0x8c213ee79581Ff4984583C6a801e5263418C4b86', dec: 6,  nav: 1.12,  rules: 'ladder',  navSrc: 'rwa.xyz, 19 Oct' },
   { sym: 'USTB',    addr: '0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e', dec: 6,  nav: 11.25, rules: 'none',    navSrc: 'rwa.xyz, 19 Oct' },
   { sym: 'WTGXX',   addr: '0x1feCF3d9d4Fee7f2c02917A66028a48C6706c179', dec: 18, nav: 1,     rules: 'none',    navSrc: 'rwa.xyz, 19 Oct' },
   { sym: 'USDY',    addr: '0x96F6eF951840721AdBF46Ac996b59E0235CB985C', dec: 18, nav: 1.15,  rules: 'none',    navSrc: 'rwa.xyz, 19 Oct' }
@@ -1378,8 +1436,8 @@ function aRender(){
       '<td class="amt" id="a-usd-' + i + '">' + aMoney2(r.bal * r.nav) + '</td><td>' + aRulesLabel(r.t.rules) + '</td></tr>';
   }
   h += '</tbody></table></div>';
-  h += '<p style="margin:14px 0 0"><button class="btn" onclick="aUse()">Use USDC and BUIDL in the ladder</button></p>';
-  h += '<p class="why-s" style="margin-top:8px">Only BUIDL (and BUIDL-I, assumed to follow the same rules) have redemption rules in HOP so far. The other tokens are shown for context.</p>';
+  h += '<p style="margin:14px 0 0"><button class="btn" id="a-use" onclick="aUse()">Use USDC and ' + esc(ladderRead().sleeve.short) + ' in the ladder</button></p>';
+  h += '<p class="why-s" style="margin-top:8px">Only BUIDL (and BUIDL-I, assumed to follow the same rules) and JTRSY have redemption rules in HOP so far. The other tokens are shown for context.</p>';
   a$('a-panel').style.display = 'block';
   a$('a-out').innerHTML = h;
   var navs = a$('a-out').querySelectorAll('.a-nav');
@@ -1391,11 +1449,11 @@ function aRender(){
 }
 function aUse(){
   if (!aLast) return;
-  var spend = 0, held = 0;
+  var spend = 0, held = 0, syms = ladderRead().sleeve.syms;
   aLast.rows.forEach(function(r){
     var usd = r.bal * r.nav;
     if (r.t.sym === 'USDC') spend += usd;
-    if (r.t.sym === 'BUIDL' || r.t.sym === 'BUIDL-I') held += usd;
+    if (syms.indexOf(r.t.sym) >= 0) held += usd;
   });
   a$('l-spend').value = Math.floor(spend);
   a$('l-held').value = Math.floor(held);
