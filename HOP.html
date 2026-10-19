@@ -521,6 +521,20 @@
     <div class="cols">
 
       <div>
+        <p class="label">Read an Ethereum address (optional)</p>
+        <div class="panel">
+          <div class="f">
+            <label for="a-addr">Public address (0x...)</label>
+            <input id="a-addr" type="text" placeholder="0x..." autocomplete="off" spellcheck="false" style="font-size:12px">
+          </div>
+          <div class="f">
+            <label for="a-rpc">Your own RPC URL (optional)</label>
+            <input id="a-rpc" type="text" placeholder="https://..." autocomplete="off" spellcheck="false" style="font-size:12px">
+            <div class="hint">Leave blank to use free public nodes. The address you enter is sent to the node provider. Public balances only, nothing is signed or stored.</div>
+          </div>
+          <button class="btn" id="a-btn" type="button">Read balances</button>
+        </div>
+
         <p class="label">Position (typed in)</p>
         <div class="panel">
           <div class="f">
@@ -582,6 +596,7 @@
       </div>
 
       <div>
+        <div id="a-panel" class="panel" style="display:none"><div id="a-out"></div></div>
         <div id="l-sum" class="verdict" aria-live="polite"></div>
         <p class="label">Cash ladder, New York time</p>
         <div class="panel"><div class="tblwrap" id="l-table"></div></div>
@@ -591,7 +606,7 @@
       </div>
 
     </div>
-    <p class="note" style="margin-top:20px">Ladder v0.1. BUIDL on Ethereum only. Figures are typed in, there is no wallet connection and nothing is read from the chain. Rules come from public pages checked on 19 Oct 2026 and are mostly one 2025 source, so each carries a confidence tag. The USDC off-ramp is shown as possible, never counted as certain cash. Demo only.</p>
+    <p class="note" style="margin-top:20px">Ladder v0.2. BUIDL on Ethereum only. Figures are typed in, or read from a public Ethereum address if you paste one. There is no wallet connection and nothing is signed. Rules come from public pages checked on 19 Oct 2026 and are mostly one 2025 source, so each carries a confidence tag. The USDC off-ramp is shown as possible, never counted as certain cash. Demo only.</p>
   </section>
 
   <footer>Demo only. Does not move client funds. Not an offer of securities.</footer>
@@ -1245,14 +1260,15 @@ function ladderReport(){
     'h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:26px 0 8px;border-bottom:1px solid #dedad2;padding-bottom:4px}' +
     'table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid #dedad2;vertical-align:top}' +
     'td.a,th.a{text-align:right}.m{color:#5b6560;font-size:12px}.f{margin-top:32px;font-size:12px;color:#5b6560;border-top:1px solid #dedad2;padding-top:10px}</style></head><body>';
-  h += '<h1>HOP cash ladder</h1><div class="m">' + esc(r.inp.sleeve.name) + ' · generated ' + esc(fmt(now, NY)) + ' New York / ' + esc(fmt(now, DUB)) + ' Dublin · ladder v0.1</div>';
-  h += '<h2>Inputs (typed in, not read from a wallet)</h2><table><tbody>' +
+  h += '<h1>HOP cash ladder</h1><div class="m">' + esc(r.inp.sleeve.name) + ' · generated ' + esc(fmt(now, NY)) + ' New York / ' + esc(fmt(now, DUB)) + ' Dublin · ladder v0.2</div>';
+  h += '<h2>Inputs</h2><table><tbody>' +
     '<tr><td>As of</td><td>' + esc(fmt(inp.asOf, NY)) + ' NY</td></tr>' +
     '<tr><td>Spendable USDC</td><td>' + money(r.spend) + '</td></tr>' +
     '<tr><td>BUIDL held (USD value)</td><td>' + money(r.held) + '</td></tr>' +
     '<tr><td>Amount to pull back</td><td>' + money(r.want) + '</td></tr>' +
     '<tr><td>Onboarded and whitelisted</td><td>' + (inp.onboarded ? 'Yes' : 'No') + '</td></tr>' +
     (isFinite(inp.due) ? '<tr><td>Payment due</td><td>' + esc(fmt(inp.due, NY)) + ' NY</td></tr>' : '') + '</tbody></table>';
+  h += '<p class="m">' + (aLast && aLast.used ? 'Spendable USDC and BUIDL were read from public Ethereum data for ' + esc(aLast.addr) + ' at block ' + aLast.block.toLocaleString('en-US') + ' via ' + esc(aLast.host) + '. NAV is an editable estimate.' : 'Figures were typed in. No wallet connection and nothing read from the chain.') + '</p>';
   h += '<h2>Cash ladder</h2>';
   for (var i = 0; i < r.warn.length; i++) h += '<p class="m">Note: ' + esc(r.warn[i]) + '</p>';
   h += '<table><thead><tr><th>When</th><th>Time (NY)</th><th class="a">Certain cash</th><th class="a">Possible extra</th><th>Result</th></tr></thead><tbody>';
@@ -1283,6 +1299,113 @@ function ladderReport(){
   }
   lad$('l-jump').addEventListener('change', function(){ ladderPreset(this.value); });
   ladderRender();
+})();
+</script>
+<script>
+/* ==== LADDER v0.2: read balances from a public Ethereum address ====
+   Read-only. One eth_call per token (balanceOf). Nothing is signed, stored or sent anywhere except the RPC provider.
+   Contract addresses checked on Etherscan (name, symbol, decimals) on 20 Oct 2026; see HOP_BUIDL_rules.xlsx, sheet "Ethereum contracts". */
+var A_TOKENS = [
+  { sym: 'USDC',    addr: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', dec: 6,  nav: 1,     rules: 'cash',    navSrc: 'Cash, $1' },
+  { sym: 'BUIDL',   addr: '0x7712c34205737192402172409a8F7ccef8aA2AEc', dec: 6,  nav: 1,     rules: 'ladder',  navSrc: 'Fund targets $1' },
+  { sym: 'BUIDL-I', addr: '0x6a9DA2D710BB9B700acde7Cb81F10F1fF8C89041', dec: 6,  nav: 1,     rules: 'assumed', navSrc: 'Fund targets $1' },
+  { sym: 'USTB',    addr: '0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e', dec: 6,  nav: 11.25, rules: 'none',    navSrc: 'rwa.xyz, 19 Oct' },
+  { sym: 'WTGXX',   addr: '0x1feCF3d9d4Fee7f2c02917A66028a48C6706c179', dec: 18, nav: 1,     rules: 'none',    navSrc: 'rwa.xyz, 19 Oct' },
+  { sym: 'USDY',    addr: '0x96F6eF951840721AdBF46Ac996b59E0235CB985C', dec: 18, nav: 1.15,  rules: 'none',    navSrc: 'rwa.xyz, 19 Oct' }
+];
+var A_RPCS = ['https://ethereum-rpc.publicnode.com', 'https://eth.llamarpc.com', 'https://cloudflare-eth.com'];
+var aLast = null;
+
+function a$(id){ return document.getElementById(id); }
+function aRpc(url, method, params){
+  return fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: method, params: params }) })
+    .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(j){ if (!j || j.error || typeof j.result !== 'string') throw new Error((j && j.error && j.error.message) || 'bad reply'); return j.result; });
+}
+function aTokens(hex, dec){
+  if (!/^0x[0-9a-fA-F]+$/.test(hex)) throw new Error('empty reply');
+  var bal = BigInt(hex), div = BigInt(10) ** BigInt(dec);
+  return Number(bal * BigInt(10000) / div) / 10000;
+}
+function aMsg(html, bad){
+  var p = a$('a-panel');
+  p.style.display = 'block';
+  a$('a-out').innerHTML = '<p class="' + (bad ? 'lwarn' : 'note') + '" style="margin:0">' + html + '</p>';
+}
+function aRead(){
+  var addr = a$('a-addr').value.trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) { aMsg('Enter a full Ethereum address: 0x followed by 40 letters and numbers. Names like name.eth are not supported yet.', true); return; }
+  var custom = a$('a-rpc').value.trim();
+  if (custom && !/^https:\/\//i.test(custom)) { aMsg('The custom RPC URL must start with https://', true); return; }
+  var urls = custom ? [custom] : A_RPCS;
+  var data = '0x70a08231' + '000000000000000000000000' + addr.slice(2).toLowerCase();
+  aMsg('Reading balances from a public Ethereum node…');
+  a$('a-btn').disabled = true;
+  function done(){ a$('a-btn').disabled = false; }
+  function attempt(i){
+    if (i >= urls.length) {
+      aMsg('Could not reach a public Ethereum node. Try again in a minute, or paste your own RPC URL in the box. Nothing was read.', true);
+      done(); return;
+    }
+    var u = urls[i];
+    var calls = [aRpc(u, 'eth_blockNumber', [])].concat(A_TOKENS.map(function(t){ return aRpc(u, 'eth_call', [{ to: t.addr, data: data }, 'latest']); }));
+    Promise.all(calls).then(function(res){
+      var rows = A_TOKENS.map(function(t, k){ return { t: t, bal: aTokens(res[k + 1], t.dec), nav: t.nav }; });
+      var host = u; try { host = new URL(u).host; } catch (e) {}
+      aLast = { addr: addr, block: parseInt(res[0], 16), host: host, rows: rows, used: false };
+      aRender(); done();
+    }).catch(function(){ attempt(i + 1); });
+  }
+  attempt(0);
+}
+function aMoney2(n){ return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function aRulesLabel(r){
+  return r === 'ladder' ? '<span class="result nav">Rules in ladder</span>'
+    : r === 'assumed' ? '<span class="result queued">Uses BUIDL rules (assumed)</span>'
+    : r === 'cash' ? '<span class="result nav">Spendable</span>'
+    : '<span class="result refused">No rules yet</span>';
+}
+function aRender(){
+  if (!aLast) return;
+  var h = '<p class="note" style="margin-bottom:12px">Read at Ethereum block <b>' + aLast.block.toLocaleString('en-US') + '</b> from ' + esc(aLast.host) + ' for <span style="font-family:var(--mono);overflow-wrap:anywhere">' + esc(aLast.addr) + '</span>. Public data, nothing signed. NAV is an editable estimate, not read from the chain.</p>';
+  h += '<div class="tblwrap"><table class="ltbl"><thead><tr><th>Token</th><th class="amt">Balance</th><th class="amt">NAV (USD)</th><th class="amt">Est. USD</th><th>In HOP</th></tr></thead><tbody>';
+  for (var i = 0; i < aLast.rows.length; i++) {
+    var r = aLast.rows[i];
+    h += '<tr><td><b>' + esc(r.t.sym) + '</b><span class="why-s"><a href="https://etherscan.io/token/' + r.t.addr + '" target="_blank" rel="noopener">verify contract</a></span></td>' +
+      '<td class="amt">' + aMoney2(r.bal) + '</td>' +
+      '<td class="amt"><input type="number" step="0.01" min="0" value="' + r.nav + '" data-i="' + i + '" class="a-nav" style="width:84px;text-align:right"><span class="why-s">' + esc(r.t.navSrc) + '</span></td>' +
+      '<td class="amt" id="a-usd-' + i + '">' + aMoney2(r.bal * r.nav) + '</td><td>' + aRulesLabel(r.t.rules) + '</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  h += '<p style="margin:14px 0 0"><button class="btn" onclick="aUse()">Use USDC and BUIDL in the ladder</button></p>';
+  h += '<p class="why-s" style="margin-top:8px">Only BUIDL (and BUIDL-I, assumed to follow the same rules) have redemption rules in HOP so far. The other tokens are shown for context.</p>';
+  a$('a-panel').style.display = 'block';
+  a$('a-out').innerHTML = h;
+  var navs = a$('a-out').querySelectorAll('.a-nav');
+  for (var k = 0; k < navs.length; k++) navs[k].addEventListener('input', function(){
+    var i2 = +this.getAttribute('data-i'), v = parseFloat(this.value);
+    aLast.rows[i2].nav = isFinite(v) && v >= 0 ? v : 0;
+    a$('a-usd-' + i2).textContent = aMoney2(aLast.rows[i2].bal * aLast.rows[i2].nav);
+  });
+}
+function aUse(){
+  if (!aLast) return;
+  var spend = 0, held = 0;
+  aLast.rows.forEach(function(r){
+    var usd = r.bal * r.nav;
+    if (r.t.sym === 'USDC') spend += usd;
+    if (r.t.sym === 'BUIDL' || r.t.sym === 'BUIDL-I') held += usd;
+  });
+  a$('l-spend').value = Math.floor(spend);
+  a$('l-held').value = Math.floor(held);
+  aLast.used = true;
+  ladderRender();
+}
+
+(function addrInit(){
+  a$('a-btn').addEventListener('click', aRead);
+  a$('a-addr').addEventListener('keydown', function(e){ if (e.key === 'Enter') aRead(); });
 })();
 </script>
 </body>
