@@ -606,7 +606,7 @@
       </div>
 
     </div>
-    <p class="note" style="margin-top:20px">Ladder v0.4. BUIDL and JTRSY on Ethereum, one at a time or for a whole address. Figures are typed in, or read from a public Ethereum address if you paste one. There is no wallet connection and nothing is signed. Rules come from public pages checked on 19 and 20 Oct 2026, mostly 2025 and 2026 issuer and partner documents, so each carries a confidence tag. Instant exit routes are shown as possible, never counted as certain cash. Demo only.</p>
+    <p class="note" style="margin-top:20px">Ladder v0.5. BUIDL and JTRSY on Ethereum, one at a time or for a whole address. JAAA and STAC are read and shown as possible only until their redemption rules are confirmed. Figures are typed in, or read from a public Ethereum address if you paste one. There is no wallet connection and nothing is signed. Rules come from public pages checked on 19 and 20 Oct 2026, mostly 2025 and 2026 issuer and partner documents, so each carries a confidence tag. Instant exit routes are shown as possible, never counted as certain cash. Demo only.</p>
   </section>
 
   <footer>Demo only. Does not move client funds. Not an offer of securities.</footer>
@@ -1368,6 +1368,8 @@ var A_TOKENS = [
   { sym: 'BUIDL',   addr: '0x7712c34205737192402172409a8F7ccef8aA2AEc', dec: 6,  nav: 1,     rules: 'ladder',  navSrc: 'Fund targets $1' },
   { sym: 'BUIDL-I', addr: '0x6a9DA2D710BB9B700acde7Cb81F10F1fF8C89041', dec: 6,  nav: 1,     rules: 'assumed', navSrc: 'Fund targets $1' },
   { sym: 'JTRSY',   addr: '0x8c213ee79581Ff4984583C6a801e5263418C4b86', dec: 6,  nav: 1.12,  rules: 'ladder',  navSrc: 'rwa.xyz, 19 Oct' },
+  { sym: 'JAAA',    addr: '0x5a0f93d040de44e78f251b03c43be9cf317dcf64', dec: 6,  nav: 1.053, rules: 'possible', navSrc: 'Etherscan, 20 Oct' },
+  { sym: 'STAC',    addr: '0x51C2d74017390CbBd30550179A16A1c28F7210fc', dec: 6,  nav: 1036.82, rules: 'possible', navSrc: 'Etherscan, 20 Oct' },
   { sym: 'USTB',    addr: '0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e', dec: 6,  nav: 11.25, rules: 'none',    navSrc: 'rwa.xyz, 19 Oct' },
   { sym: 'WTGXX',   addr: '0x1feCF3d9d4Fee7f2c02917A66028a48C6706c179', dec: 18, nav: 1,     rules: 'none',    navSrc: 'rwa.xyz, 19 Oct' },
   { sym: 'USDY',    addr: '0x96F6eF951840721AdBF46Ac996b59E0235CB985C', dec: 18, nav: 1.15,  rules: 'none',    navSrc: 'rwa.xyz, 19 Oct' }
@@ -1423,6 +1425,7 @@ function aRulesLabel(r){
   return r === 'ladder' ? '<span class="result nav">Rules in ladder</span>'
     : r === 'assumed' ? '<span class="result queued">Uses BUIDL rules (assumed)</span>'
     : r === 'cash' ? '<span class="result nav">Spendable</span>'
+    : r === 'possible' ? '<span class="result queued">Possible only (terms unconfirmed)</span>'
     : '<span class="result refused">No rules yet</span>';
 }
 function aRender(){
@@ -1438,7 +1441,7 @@ function aRender(){
   }
   h += '</tbody></table></div>';
   h += '<p style="margin:14px 0 0"><button class="btn" id="a-use" onclick="aUse()">Use USDC and ' + esc(ladderRead().sleeve.short) + ' in the ladder</button></p>';
-  h += '<p class="why-s" style="margin-top:8px">Only BUIDL (and BUIDL-I, assumed to follow the same rules) and JTRSY have redemption rules in HOP so far. The other tokens are shown for context.</p>';
+  h += '<p class="why-s" style="margin-top:8px">Only BUIDL (and BUIDL-I, assumed to follow the same rules) and JTRSY have redemption rules in HOP so far. JAAA and STAC are counted as possible only. The other tokens are shown for context.</p>';
   h += '<div id="a-port"></div>';
   a$('a-panel').style.display = 'block';
   a$('a-out').innerHTML = h;
@@ -1477,7 +1480,7 @@ function aPortCompute(){
   if (!aLast) return null;
   var base = ladderRead();
   if (!isFinite(base.asOf)) return null;
-  var spend = aUsd('USDC'), legs = [], warn = [], k, i;
+  var spend = aUsd('USDC'), unc = aUsd('JAAA') + aUsd('STAC'), legs = [], warn = [], k, i;
   for (k = 0; k < PORT_KEYS.length; k++) {
     var sl = SLEEVES[PORT_KEYS[k]], held = 0;
     sl.syms.forEach(function(s){ held += aUsd(s); });
@@ -1490,13 +1493,13 @@ function aPortCompute(){
   if (!legs.length) {
     var hs = ladderCompute({ sleeve: SLEEVES.buidl, asOf: base.asOf, spend: spend, held: 0, want: 0, due: base.due, onboarded: true, finalMin: 0, lagH: 0, hol: base.hol });
     nRows = hs.rows.length;
-    var rows0 = hs.rows.map(function(r){ return { label: r.label, ms: r.ms, parts: {}, certain: spend, possible: 0 }; });
-    return { spend: spend, legs: legs, rows: rows0, tracked: spend, warn: warn, notModelled: aUsd('USTB') + aUsd('WTGXX') + aUsd('USDY'), base: base };
+    var rows0 = hs.rows.map(function(r){ return { label: r.label, ms: r.ms, parts: {}, certain: spend, possible: unc }; });
+    return { spend: spend, unc: unc, legs: legs, rows: rows0, tracked: spend + unc, warn: warn, notModelled: aUsd('USTB') + aUsd('WTGXX') + aUsd('USDY'), base: base };
   }
-  var rows = [], tracked = spend;
+  var rows = [], tracked = spend + unc;
   legs.forEach(function(l){ tracked += l.held; });
   for (i = 0; i < nRows; i++) {
-    var row = { label: legs[0].res.rows[i].label, ms: legs[0].res.rows[i].ms, parts: {}, certain: spend, possible: 0 };
+    var row = { label: legs[0].res.rows[i].label, ms: legs[0].res.rows[i].ms, parts: {}, certain: spend, possible: unc };
     legs.forEach(function(l){
       var r = l.res.rows[i];
       row.parts[l.sl.short] = r.certain;
@@ -1505,7 +1508,7 @@ function aPortCompute(){
     });
     rows.push(row);
   }
-  return { spend: spend, legs: legs, rows: rows, tracked: tracked, warn: warn, notModelled: aUsd('USTB') + aUsd('WTGXX') + aUsd('USDY'), base: base };
+  return { spend: spend, unc: unc, legs: legs, rows: rows, tracked: tracked, warn: warn, notModelled: aUsd('USTB') + aUsd('WTGXX') + aUsd('USDY'), base: base };
 }
 function aM(n){ return n >= 1e6 ? (n / 1e6).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'M' : money(n); }
 function aPortHtml(p, forReport){
@@ -1531,8 +1534,9 @@ function aPort(){
   var h = '<p class="label" style="margin-top:22px">Whole-treasury ladder: redeem everything at the As-of time</p>';
   for (var i = 0; i < p.warn.length; i++) h += '<p class="lwarn">' + esc(p.warn[i]) + '</p>';
   h += '<div class="tblwrap">' + aPortHtml(p, false) + '</div>';
-  h += '<p class="why-s" style="margin-top:10px">Amounts in USD. Tracked value ' + aM(p.tracked) + ' (USDC plus BUIDL, BUIDL-I and JTRSY). "Certain share" is the part of that value reachable by the time shown through the standard routes. Instant routes are possible, never counted.' +
-    (p.notModelled > 0 ? ' Not modelled yet: USTB, WTGXX and USDY holdings of about ' + aM(p.notModelled) + '.' : '') + ' Tokens HOP does not read yet (for example JAAA and STAC) are not included, so the real total can be larger.</p>';
+  h += '<p class="why-s" style="margin-top:10px">Amounts in USD. Tracked value ' + aM(p.tracked) + ' (USDC, BUIDL, BUIDL-I, JTRSY' + (p.unc > 0 ? ', JAAA and STAC' : '') + '). "Certain share" is the part of that value reachable by the time shown through the standard routes. Instant routes are possible, never counted.' +
+    (p.unc > 0 ? ' JAAA and STAC (about ' + aM(p.unc) + ') are always counted as possible, never certain: public sources say JAAA redemptions typically settle in one to two days and STAC redeems daily with a listed 2% fee, but no cut-off or settlement rule is confirmed for either.' : '') +
+    (p.notModelled > 0 ? ' Not modelled yet: USTB, WTGXX and USDY holdings of about ' + aM(p.notModelled) + '.' : '') + ' Tokens HOP does not read yet are not included, so the real total can be larger.</p>';
   h += '<p style="margin:12px 0 0"><button class="btn" onclick="aPortReport()">Download treasury report</button> <button class="btn" onclick="aCopyLink()" style="margin-left:8px">Copy link to this view</button> <span id="a-copied" class="why-s"></span></p>';
   el.innerHTML = h;
 }
@@ -1552,14 +1556,14 @@ function aPortReport(){
     'h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:26px 0 8px;border-bottom:1px solid #dedad2;padding-bottom:4px}' +
     'table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid #dedad2;vertical-align:top}' +
     'td.amt,th.amt{text-align:right}.m{color:#5b6560;font-size:12px}.f{margin-top:32px;font-size:12px;color:#5b6560;border-top:1px solid #dedad2;padding-top:10px}</style></head><body>';
-  h += '<h1>HOP treasury ladder</h1><div class="m">Unofficial estimate from public data · generated ' + esc(fmt(now, NY)) + ' New York / ' + esc(fmt(now, DUB)) + ' Dublin · ladder v0.4</div>';
+  h += '<h1>HOP treasury ladder</h1><div class="m">Unofficial estimate from public data · generated ' + esc(fmt(now, NY)) + ' New York / ' + esc(fmt(now, DUB)) + ' Dublin · ladder v0.5</div>';
   h += '<h2>Address and holdings</h2><p class="m">Public Ethereum address ' + esc(aLast.addr) + ', read at block ' + aLast.block.toLocaleString('en-US') + ' via ' + esc(aLast.host) + '. NAV values are editable estimates, not read from the chain.</p><table><thead><tr><th>Token</th><th class="amt">Balance</th><th class="amt">NAV (USD)</th><th class="amt">Est. USD</th></tr></thead><tbody>';
   aLast.rows.forEach(function(r){ if (r.bal > 0) h += '<tr><td>' + esc(r.t.sym) + '</td><td class="amt">' + aMoney2(r.bal) + '</td><td class="amt">' + r.nav + '</td><td class="amt">' + aMoney2(r.bal * r.nav) + '</td></tr>'; });
   h += '</tbody></table>';
   h += '<h2>Time to cash if everything were redeemed at ' + esc(fmt(base.asOf, NY)) + ' NY</h2>';
   p.warn.forEach(function(w){ h += '<p class="m">Note: ' + esc(w) + '</p>'; });
   h += aPortHtml(p, true);
-  h += '<p class="m">Amounts in USD. Tracked value ' + aM(p.tracked) + '. Instant routes are possible, never counted as certain cash.' + (p.notModelled > 0 ? ' Not modelled yet: USTB, WTGXX and USDY holdings of about ' + aM(p.notModelled) + '.' : '') + ' Tokens HOP does not read yet are not included.</p>';
+  h += '<p class="m">Amounts in USD. Tracked value ' + aM(p.tracked) + '. Instant routes are possible, never counted as certain cash.' + (p.unc > 0 ? ' JAAA and STAC (about ' + aM(p.unc) + ') are counted as possible only: public sources give typical one-to-two-day settlement for JAAA and daily redemption with a listed 2% fee for STAC, but no cut-off or settlement rule is confirmed.' : '') + (p.notModelled > 0 ? ' Not modelled yet: USTB, WTGXX and USDY holdings of about ' + aM(p.notModelled) + '.' : '') + ' Tokens HOP does not read yet are not included.</p>';
   p.legs.forEach(function(l){
     h += '<h2>Rules used: ' + esc(l.sl.name) + '</h2><ol>';
     l.sl.rules.forEach(function(q){ h += '<li>' + esc(q.t) + ' <span class="m">[' + esc(q.conf) + '; ' + esc(q.src) + ']</span></li>'; });
