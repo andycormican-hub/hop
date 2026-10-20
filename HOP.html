@@ -1535,7 +1535,7 @@ function aPort(){
   for (var i = 0; i < p.warn.length; i++) h += '<p class="lwarn">' + esc(p.warn[i]) + '</p>';
   h += '<div class="tblwrap">' + aPortHtml(p, false) + '</div>';
   h += '<p class="why-s" style="margin-top:10px">Amounts in USD. Tracked value ' + aM(p.tracked) + ' (USDC, BUIDL, BUIDL-I, JTRSY' + (p.unc > 0 ? ', JAAA and STAC' : '') + '). "Certain share" is the part of that value reachable by the time shown through the standard routes. Instant routes are possible, never counted.' +
-    (p.unc > 0 ? ' JAAA and STAC (about ' + aM(p.unc) + ') are always counted as possible, never certain: public sources say JAAA redemptions typically settle in one to two days and STAC redeems daily with a listed 2% fee, but no cut-off or settlement rule is confirmed for either.' : '') +
+    (aUsd('BUIDL-I') > 0 ? ' BUIDL-I is assumed to follow the BUIDL rules.' : '') + (p.unc > 0 ? ' JAAA and STAC (about ' + aM(p.unc) + ') are always counted as possible, never certain: public sources say JAAA redemptions typically settle in one to two days and STAC redeems daily with a listed 2% fee, but no cut-off or settlement rule is confirmed for either.' : '') +
     (p.notModelled > 0 ? ' Not modelled yet: USTB, WTGXX and USDY holdings of about ' + aM(p.notModelled) + '.' : '') + ' Tokens HOP does not read yet are not included, so the real total can be larger.</p>';
   h += '<p style="margin:12px 0 0"><button class="btn" onclick="aPortReport()">Download treasury report</button> <button class="btn" onclick="aCopyLink()" style="margin-left:8px">Copy link to this view</button> <span id="a-copied" class="why-s"></span></p>';
   el.innerHTML = h;
@@ -1568,6 +1568,7 @@ function aPortReport(){
     h += '<h2>Rules used: ' + esc(l.sl.name) + '</h2><ol>';
     l.sl.rules.forEach(function(q){ h += '<li>' + esc(q.t) + ' <span class="m">[' + esc(q.conf) + '; ' + esc(q.src) + ']</span></li>'; });
     h += '</ol><p class="m">HOP assumptions, not from any source: ' + esc(l.sl.assumptions(base)) + '</p>';
+    if (l.sl.key === 'buidl' && aUsd('BUIDL-I') > 0) h += '<p class="m">BUIDL-I (the institutional class this address holds) is assumed to follow the same redemption rules as BUIDL. That is an assumption. The BUIDL column above includes it.</p>';
   });
   h += '<p class="m">Holidays treated as non-business days: ' + esc(Object.keys(base.hol).sort().join(', ') || 'none') + '. Rules read from public pages on 19 and 20 Oct 2026 and not confirmed against the funds’ offering documents. Not legal or investment advice. This is built only from public data and may be wrong about arrangements the holder has with issuers or liquidity providers.</p>';
   h += '<div class="f">Demo only. Does not move client funds. Not an offer of securities.</div></body></html>';
